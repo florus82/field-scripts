@@ -8,7 +8,7 @@ from albumentations.core.transforms_interface import  ImageOnlyTransform
 import torch
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
-sys.path.append(r'/home/repos')
+sys.path.append(r'../')
 from torch.utils.data import DataLoader                                                                                 
 from tfcl.models.ptavit3d.ptavit3d_dn import ptavit3d_dn       
 from tfcl.nn.loss.ftnmt_loss import ftnmt_loss               
@@ -391,3 +391,4 @@ def checkemptyNC(pathList):
         if len(np.unique(img)) == 1:
             label_index_List.append(i)
     return label_index_List
+
