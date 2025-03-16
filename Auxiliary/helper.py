@@ -144,16 +144,20 @@ class TrainingTransformS2(object):
         return self.mytransform(data)
 
 class VALIDataset(torch.utils.data.Dataset):
-    def __init__(self, path_to_data=r'//home/ai4boundaries/sentinel2/', norm=AI4BNormal_S2()):
+    def __init__(self, path_to_data=r'/../../../../data/fields/', norm=AI4BNormal_S2()):
         
-        self.flnames_s2_img = sorted(glob.glob(os.path.join(path_to_data,r'images/' + 'LU' + '/*.nc')))
-        self.flnames_s2_mask = sorted(glob.glob(os.path.join(path_to_data,r'masks/' + 'LU' + '/*.tif')))
+        # self.flnames_s2_img = sorted(glob.glob(os.path.join(path_to_data,r'images/' + 'LU' + '/*.nc')))
+        # self.flnames_s2_mask = sorted(glob.glob(os.path.join(path_to_data,r'masks/' + 'LU' + '/*.tif')))
+    
         
+        self.flnames_s2_img = path_to_data + 'vector/Force_X_from_68_to_69_Y_from_42_to_42.vrt'
+        self.flnames_s2_mask = path_to_data + 'IACS/4_Multitask_labels/GSA-DE_BRB-2019_mtsk.tif'
+
         assert len(self.flnames_s2_img) == len(self.flnames_s2_mask), ValueError("Some problem, the masks and images are not in the same numbers, aborting")
         
         tlen = len(self.flnames_s2_img)
-        
-        self.norm=norm                                                                   
+        self.norm=norm   
+
     # Helper function to read nc to raster 
     def ds2rstr(self,tname):
         variables2use=['B2','B3','B4','B8'] # ,'NDVI']
