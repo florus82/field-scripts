@@ -219,6 +219,7 @@ class RocksDBReader(_RocksDBBase):
 
         key = self.keys[idx]
 
+
         all_inputs = []
         for cname in self.cf_names:
             tcfinputs = self.db.get_column_family(cname)

@@ -74,7 +74,7 @@ class AI4BNormal_S2(object):
         self._std_s2  = np.array( [3.7141626e+02, 3.8981952e+02, 4.7989127e+02 ,9.5173022e+02]).astype(np.float32) 
 
     def __call__(self,img):
-        print(img)
+
         temp = img.astype(np.float32)
         temp2 = temp.T
         temp2 -= self._mean_s2
@@ -370,9 +370,12 @@ class TrainingTransform_for_rocks_Train(object):
 
 class TrainingTransform_for_rocks_Valid(object):
     # Built on Albumentations, this provides geometric transformation only  
-    def __init__(self, norm = AI4BNormal_S2()):
+    def __init__(self,  prob = .8, norm = AI4BNormal_S2(), predict=False):
         
-        self.mytransform = self.transform_valid
+        if predict == True:
+            self.mytransform = self.transform_predict
+        else:    
+            self.mytransform = self.transform_valid
         self.norm = norm
         
     def transform_valid(self, data):
@@ -382,6 +385,13 @@ class TrainingTransform_for_rocks_Valid(object):
         
         tmask= tmask 
         return timgS2,  tmask.astype(np.float32)
+
+    def transform_predict(self, data):
+        timgS2 = data
+        print('problem here')
+        if self.norm is not None:
+            timgS2 = self.norm(timgS2)
+        return timgS2
     
     def __call__(self, *data):
         return self.mytransform(data)

@@ -74,7 +74,7 @@ class AI4BNormal_S2(object):
         self._std_s2  = np.array( [3.7141626e+02, 3.8981952e+02, 4.7989127e+02 ,9.5173022e+02]).astype(np.float32) 
 
     def __call__(self,img):
-        print(img)
+
         temp = img.astype(np.float32)
         temp2 = temp.T
         temp2 -= self._mean_s2
@@ -370,8 +370,8 @@ class TrainingTransform_for_rocks_Train(object):
 
 class TrainingTransform_for_rocks_Valid(object):
     # Built on Albumentations, this provides geometric transformation only  
-    def __init__(self, norm = AI4BNormal_S2()):
-        
+    def __init__(self,  prob = .8, norm = AI4BNormal_S2()):
+  
         self.mytransform = self.transform_valid
         self.norm = norm
         
@@ -382,11 +382,9 @@ class TrainingTransform_for_rocks_Valid(object):
         
         tmask= tmask 
         return timgS2,  tmask.astype(np.float32)
-    
+
     def __call__(self, *data):
         return self.mytransform(data)
-    
-
  
 def checkemptyNC(pathList):
     # see if there were empty label images from the beginning

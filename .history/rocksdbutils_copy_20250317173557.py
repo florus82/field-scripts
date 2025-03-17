@@ -218,9 +218,11 @@ class RocksDBReader(_RocksDBBase):
     def get_inputs_labels(self,idx):
 
         key = self.keys[idx]
+        print(key)
 
         all_inputs = []
         for cname in self.cf_names:
+            print(cname)
             tcfinputs = self.db.get_column_family(cname)
             cname = bytes.decode(cname)
             tinputs = self.db.get( (tcfinputs, key) )
