@@ -8,8 +8,7 @@ from albumentations.core.transforms_interface import  ImageOnlyTransform
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader   
-import matplotlib.pyplot as plt
-sys.path.append('../../repos/')                                                                
+import matplotlib.pyplot as plt                                                              
 from tfcl.models.ptavit3d.ptavit3d_dn import ptavit3d_dn       
 from tfcl.nn.loss.ftnmt_loss import ftnmt_loss               
 from tfcl.utils.classification_metric import Classification  
@@ -74,7 +73,6 @@ class AI4BNormal_S2(object):
         self._std_s2  = np.array( [3.7141626e+02, 3.8981952e+02, 4.7989127e+02 ,9.5173022e+02]).astype(np.float32) 
 
     def __call__(self,img):
-        print(img)
         temp = img.astype(np.float32)
         temp2 = temp.T
         temp2 -= self._mean_s2
@@ -387,7 +385,6 @@ class TrainingTransform_for_rocks_Valid(object):
         return self.mytransform(data)
     
 
- 
 def checkemptyNC(pathList):
     # see if there were empty label images from the beginning
     label_index_List = []
@@ -397,3 +394,10 @@ def checkemptyNC(pathList):
         if len(np.unique(img)) == 1:
             label_index_List.append(i)
     return label_index_List
+
+def sortListwithOtherlist(list1, list2):
+    ''' list1: unsorted list
+        list2: unsorted list with same length as list1
+        Sorts list2 based on sorted(list1). Returns sorted list1 list2'''
+    sortlist1, sortlist2 = zip(*sorted(zip(list1, list2)))
+    return list(sortlist1), list(sortlist2)
