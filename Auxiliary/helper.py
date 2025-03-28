@@ -401,3 +401,14 @@ def sortListwithOtherlist(list1, list2):
         Sorts list2 based on sorted(list1). Returns sorted list1 list2'''
     sortlist1, sortlist2 = zip(*sorted(zip(list1, list2)))
     return list(sortlist1), list(sortlist2)
+
+
+def vrtPyramids(vrtpath):
+    '''takes a vrtpath (or gdalOpened vrt) and produces pyramids'''
+    if type(vrtpath) == osgeo.gdal.Dataset:
+        image = vrtpath
+    else:
+        Image = gdal.Open(vrtpath, 0) # 0 = read-only, 1 = read-write. 
+    gdal.SetConfigOption('COMPRESS_OVERVIEW', 'DEFLATE')
+    Image.BuildOverviews("NEAREST", [2,4,8,16,32,64])
+    del Image
