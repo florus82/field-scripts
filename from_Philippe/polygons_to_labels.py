@@ -76,7 +76,7 @@ def make_multitask_labels(path_to_rasterlines, path_to_mtsk_out):
     copy_mem_ds(path_to_mtsk_out, mem_ds)
 
 # 03 create a crop mask
-def make_crop_mask(path_to_polygon, path_to_rasterized_lines, path_to_extent_raster, path_to_mask_out):
+def make_crop_mask(path_to_polygon, path_to_rasterized_lines, path_to_extent_raster, path_to_mask_out, all_touch=True):
     #### open field vector file
     field_gpd = gpd.read_parquet(path_to_polygon)
 
@@ -112,19 +112,27 @@ def make_crop_mask(path_to_polygon, path_to_rasterized_lines, path_to_extent_ras
         target_ds.SetGeoTransform(ds.GetGeoTransform())
         target_ds.SetProjection(ds.GetProjection())
 
-        gdal.RasterizeLayer(target_ds, [1], field_lyr, burn_values=[1], options = ["ALL_TOUCHED=TRUE"])
+        # this choice appears to have no effect when rasterizing the polygons
+        if all_touch:
+            opti = ["ALL_TOUCHED=TRUE"]
+        else:
+            opti = ["ALL_TOUCHED=FALSE"]
+        gdal.RasterizeLayer(target_ds, [1], field_lyr, burn_values=[1], options = opti)
         target_ds = None
-
+    else:
+        print(f'Mask for {path_to_polygon} already exists!!!')
     # mask the output with rasterized lines to clean up
 
-        mask_ds = gdal.Open(path_to_extent_raster)
+    path_linecrop_out = path_to_mask_out.split('.')[0] + '_lines_touch_' + path_to_rasterized_lines.split('_')[-1].split('.')[0] + '_linecrop.tif'
+    if not os.path.exists(path_linecrop_out):
+        mask_ds = gdal.Open(path_to_mask_out)
         mask = mask_ds.GetRasterBand(1).ReadAsArray()
         lines_ds  = gdal.Open(path_to_rasterized_lines)
         lines = lines_ds.GetRasterBand(1).ReadAsArray()
         
         mask[np.where(lines == 1)] = 0
 
-        target_ds = gdal.GetDriverByName('GTiff').Create(path_to_mask_out.split('.')[0] + '_linecrop.tif', mask_ds.RasterXSize, mask_ds.RasterYSize, 1, gdal.GDT_Byte)
+        target_ds = gdal.GetDriverByName('GTiff').Create(path_linecrop_out, mask_ds.RasterXSize, mask_ds.RasterYSize, 1, gdal.GDT_Byte)
         target_ds.SetGeoTransform(mask_ds.GetGeoTransform())
         target_ds.SetProjection(mask_ds.GetProjection())
         target_ds.GetRasterBand(1).WriteArray(mask)
