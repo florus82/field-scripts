@@ -195,9 +195,10 @@ boundary_pred_list = []
 result_dir_list = []
 
 # load the predictions and labels
-predictions =  '/data/fields/output/predictions/FORCE/BRANDENBURG/vrt/256_20_masked_chipsvrt.vrt' # predictions straight from GPU 
+predictions =  '/data/fields/output/predictions/FORCE/BRANDENBURG/vrt/256_20_chipsvrt.vrt' # predictions straight from GPU 
 reference =  '/data/fields/IACS/Auxiliary/GSA-DE_BRB-2019_All_agromask_linecrop_prediction_extent.tif' # mask from IACS
 result_dir = '/data/fields/Auxiliary/grid_search/Brandenburg/' + predictions.split('/')[-1].split('.')[0] + '_' + reference.split('/')[-1].split('.')[0]
+
 
 # tile predictions in prds --> total extent encompasses 90 Force Tiles (+ a few rows and cols that will be neglected as they are outside of study area)
 pred_ds = gdal.Open(predictions)
