@@ -31,7 +31,7 @@ def polygons_to_lines(path_to_polygon, path_to_lines_out, categories=None):
 
         print("Conversion complete: Polygons converted to lines.")
     else:
-        print(f'Polylines for polyong {path_to_polygon} already exists!!!')
+        print(f'Polylines for polygon {path_to_polygon} already exists!!!')
 
 
 # 01_rasterize_line_feats
@@ -58,32 +58,82 @@ def rasterize_lines(path_to_lines, path_to_extent_raster, path_to_rasterlines_ou
 
 
 # 02_multitask_labels
-def make_multitask_labels(path_to_rasterlines):
+def make_multitask_labels(path_to_rasterlines, path_to_mtsk_out):
 
     edge = cv2.imread(path_to_rasterlines, cv2.IMREAD_GRAYSCALE)
     crop = get_crop(edge)
     dist = get_distance(crop)
     edge = cv2.dilate(edge, np.ones((2,2), np.uint8), 1)
 
-
-    # open the agromask
-    ds = gdal.Open(dataFolder + 'Auxiliary/'  + file.split('.')[0] + '_All_agromask.tif')
-    mask = ds.GetRasterBand(1).ReadAsArray()
-    crop = crop * mask 
-    dist = dist * mask
-
     label = np.stack([crop, edge, dist])
-    mem_ds = create_mem_ds(path, 3)
+    mem_ds = create_mem_ds(path_to_rasterlines, 3)
 
     # write outputs to bands
     for b in range(3):
         mem_ds.GetRasterBand(b+1).WriteArray(label[b,:,:])
 
     # create physical copy of ds
-    out = dataFolder + '4_Multitask_labels/'  + file.split('.')[0] + '_All_mtsk.tif'
-    print(out)
-    copy_mem_ds(out, mem_ds)
+    copy_mem_ds(path_to_mtsk_out, mem_ds)
 
+# 03 create a crop mask
+def make_crop_mask(path_to_polygon, path_to_rasterized_lines, path_to_extent_raster, path_to_mask_out):
+    #### open field vector file
+    field_gpd = gpd.read_parquet(path_to_polygon)
+
+    # convert field_gpd to vector layer for rasterization
+    ogr_ds = ogr.GetDriverByName('Memory').CreateDataSource('')
+    srs = ogr.osr.SpatialReference()
+    srs.ImportFromWkt(field_gpd.crs.to_wkt())
+    field_lyr = ogr_ds.CreateLayer("field_layer", srs, ogr.wkbPolygon)
+
+    # Convert geometries
+    layer_defn = field_lyr.GetLayerDefn()
+    for _, row in field_gpd.iterrows():
+        feature = ogr.Feature(layer_defn)
+
+        # Validate geometry
+        if row.geometry is None or row.geometry.is_empty:
+            print("Skipping empty geometry.")
+            continue
+
+        # Convert to OGR geometry
+        geom = ogr.CreateGeometryFromWkb(row.geometry.wkb)
+        if geom is None:
+            print("Invalid geometry encountered, skipping.")
+            continue
+
+        feature.SetGeometry(geom)
+        field_lyr.CreateFeature(feature)
+        feature = None  # Free memory
+
+    if not os.path.exists(path_to_mask_out):
+        ds = gdal.Open(path_to_extent_raster)
+        target_ds = gdal.GetDriverByName('GTiff').Create(path_to_mask_out, ds.RasterXSize, ds.RasterYSize, 1, gdal.GDT_Byte)
+        target_ds.SetGeoTransform(ds.GetGeoTransform())
+        target_ds.SetProjection(ds.GetProjection())
+
+        gdal.RasterizeLayer(target_ds, [1], field_lyr, burn_values=[1], options = ["ALL_TOUCHED=TRUE"])
+        target_ds = None
+
+    # mask the output with rasterized lines to clean up
+
+        mask_ds = gdal.Open(path_to_extent_raster)
+        mask = mask_ds.GetRasterBand(1).ReadAsArray()
+        lines_ds  = gdal.Open(path_to_rasterized_lines)
+        lines = lines_ds.GetRasterBand(1).ReadAsArray()
+        
+        mask[np.where(lines == 1)] = 0
+
+        target_ds = gdal.GetDriverByName('GTiff').Create(path_to_mask_out.split('.')[0] + '_linecrop.tif', mask_ds.RasterXSize, mask_ds.RasterYSize, 1, gdal.GDT_Byte)
+        target_ds.SetGeoTransform(mask_ds.GetGeoTransform())
+        target_ds.SetProjection(mask_ds.GetProjection())
+        target_ds.GetRasterBand(1).WriteArray(mask)
+        del target_ds
+    else:
+        print(f'Mask for {path_to_polygon} in combination with {path_to_rasterized_lines} already exists!!!')
+
+###########################
+####### helper functions
 
 # create dataset in memory using geotransform specified in ref_pth
 def create_mem_ds(ref_pth, n_bands):
@@ -121,7 +171,7 @@ def get_distance(label):
                                  0)
 
     # get unique objects
-    output = cv2.connectedComponentsWithStats(crop, 4, cv2.CV_32S)
+    output = cv2.connectedComponentsWithStats(label, 4, cv2.CV_32S)
     num_objects = output[0]
     labels = output[1]
 
