@@ -1,0 +1,44 @@
+1: cuts .nc chips from AI4Boundaries(256x256) into overlapping 128x128 chips and stores them in a rocksdb. 
+    --> setings for 'AI4_RGB_exclude_True':
+
+
+    folders = ['LU', 'AT', 'ES', 'FR', 'NL', 'SE', 'SI']
+
+    exclude = True
+
+
+    img_size = 128
+    ## create metadata file
+    metadata = {
+        'inputs': {
+            'inputs_shape': (4, 6, img_size, img_size),  
+            'inputs_dtype': np.float32     
+        },
+        'labels': {
+            'labels_shape': (4, img_size, img_size),          
+            'labels_dtype': np.float32
+        }
+    }
+
+
+    rasters2rocks = Rasters2RocksDB(
+    lstOfTuplesNames=img_lab_paths,            
+    names2raster_function=names2array_function,  
+    metadata=metadata,                       
+    flname_prefix_save=output_dir,           
+    batch_size=2,
+    transformT=TrainingTransform_for_rocks_Train(),
+    transformV=TrainingTransform_for_rocks_Valid(),
+    stride_divisor=2,                    
+    train_split=0.9,                         
+    Filter=img_size,
+    split_type='sequential'                  
+)
+
+
+2: Runs the model on the rocks.db created under 01
+
+    --> only model path is provided
+
+
+3:
