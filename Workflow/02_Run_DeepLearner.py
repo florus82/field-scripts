@@ -182,13 +182,13 @@ def train(args):
         print("Training completed in: " + str(datetime.now() - start))
 
     
-    torch.save(conti[0], '/home/output/models/model_state_' + db_name + '_' + str(conti[1]) + '.pth') # 
+    torch.save(conti[0], '/data/fields/output/models/model_state_' + db_name + '_' + str(conti[1]) + '.pth') # 
 
     df  = pd.DataFrame(data = res)
-    df.to_csv('/home/output/loss/loss_' + db_name + '.csv', sep=',',index=False)
+    df.to_csv('/data/fields/output/loss/loss_' + db_name + '.csv', sep=',',index=False)
 
     df  = pd.DataFrame(data = res2)
-    df.to_csv('/home/output/loss/MCC_' + db_name + '.csv', sep=',',index=False)
+    df.to_csv('/data/fields/output/loss/MCC_' + db_name + '.csv', sep=',',index=False)
 
 
 def main():

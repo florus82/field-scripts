@@ -64,7 +64,7 @@ imgs.sort()
 labs.sort()
 
 ## exclude completely empty images
-exclude = True
+exclude = False
 if exclude == True:
     aa = checkemptyNC(labs)
     # exclude images with empty labels and their labels

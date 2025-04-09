@@ -10,14 +10,14 @@ from helperToolz.helpsters import *
 #########################  parameter settings
 # load the predictions and labels
 
-for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop.tif',
-                  '/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_false_lines_touch_false_linecrop']:
+for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop_prediction_extent.tif',
+                  '/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_false_lines_touch_false_linecrop_prediction_extent.tif']:
     
     predictions =  '/data/fields/output/predictions/FORCE/BRANDENBURG/vrt/256_20_chips.vrt' # predictions straight from GPU 
     #reference =  '/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop.tif' # mask from IACS
     result_dir = '/data/fields/Auxiliary/grid_search/Brandenburg/' + predictions.split('/')[-1].split('.')[0] + '_masked_with_and_preds_are_' + reference.split('/')[-1].split('.')[0]
     sub = predictions.split('/')[-1].split('.')[0] + '_masked_with_and_preds_are_' + reference.split('/')[-1].split('.')[0]
-    folder_path = f'/data/fields/output/predictions/FORCE/BRANDENBURG/auxiliary/{sub}/'
+    folder_path = f'{result_dir}/intermediates/'
     vrt_for_folder_path = folder_path + 'vrt/'
     os.makedirs(folder_path, exist_ok=True)
     os.makedirs(vrt_for_folder_path, exist_ok=True)
@@ -27,7 +27,7 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
     border_limit = 5
     sample_size  = 10000
     # set the number of cores for parallel processing and set seed
-    ncores = 35
+    ncores = 30
     np.random.seed(42)
     make_tifs_from_intermediate_step = True
     ######### prepare job-list
@@ -116,7 +116,7 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
         makeTif_np_to_matching_tif(filtered_instances, reference, vrt_for_folder_path + 'valid_IDs.tif', 0)
         makePyramidsForTif(vrt_for_folder_path + 'valid_IDs.tif')
 
-    print('IDS ready - start tiling')
+    print('IDs selected - start tiling')
 
     # read in vrt in tiles
     for i in range(len(row_end)):
@@ -151,8 +151,9 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
 
     jobs = [[tile_list[i], row_col_start[i] ,extent_true_list[i], extent_pred_list[i], boundary_pred_list[i], result_dir_list[i],  pred_ds.GetGeoTransform(), pred_ds.GetProjection(), folder_path, border_limit]  for i in range(len(result_dir_list))]
 
-    del tile_list, row_col_start, extent_true_list, extent_pred_list, boundary_pred_list, result_dir_list, border_limit
+    print(f'\n{len(tile_list)} tiles will be processed\n')
 
+    del tile_list, row_col_start, extent_true_list, extent_pred_list, boundary_pred_list, result_dir_list, border_limit
 
     if __name__ == '__main__':
         starttime = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())

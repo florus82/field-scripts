@@ -37,7 +37,10 @@ for chip in ['chips/', 'masked_chips/']:
     predicted_chips_to_vrt(f'/data/fields/output/predictions/FORCE/BRANDENBURG/{chip}', chipsize, overlap,
                            '/data/fields/output/predictions/FORCE/BRANDENBURG/vrt/', pyramids=True)
 
-# make a subset of the reference mask (extent FORCE output) to the extent of the prediction
 
-subset_mask_to_prediction_extent('/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_false_lines_touch_false_linecrop.tif', 
-                                 f'/data/fields/output/predictions/FORCE/BRANDENBURG/vrt/{chipsize}_{overlap}_{chip}.vrt')
+# make a subset of the reference mask (extent FORCE output) to the extent of the prediction
+subset_mask_to_prediction_extent('/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_false_lines_touch_false_linecrop.tif', 
+                                 f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/vrt/{chipsize}_{overlap}_chips.vrt')
+
+subset_mask_to_prediction_extent('/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop.tif', 
+                                 f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/vrt/{chipsize}_{overlap}_chips.vrt')

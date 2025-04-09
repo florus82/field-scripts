@@ -1,13 +1,13 @@
 library(tidyverse)
 
-path = 'X:/eoagritwin/fields/Auxiliary/grid_search/Brandenburg/256_20_chips_GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop'
+path = 'X:/eoagritwin/fields/Auxiliary/grid_search/Brandenburg/256_20_chips_masked_with_and_preds_are_GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop'
 
 files = list.files(path, full.names = T)
 
 conti = map_dfr(files, read_csv)
 
 conti %>% 
-  filter(reference_field_sizes > 10) %>% 
+  filter(reference_field_sizes > 0) %>% 
   group_by(t_ext, t_bound) %>% 
   summarise(mean_IoU_max = mean(max_IoU),
             median_IoU_max = median(max_IoU),
