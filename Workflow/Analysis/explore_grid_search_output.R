@@ -1,8 +1,8 @@
 library(tidyverse)
 
-path = 'X:/eoagritwin/fields/Auxiliary/grid_search/Brandenburg/256_20_chips_masked_with_and_preds_are_GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop'
+path = 'X:/eoagritwin/fields/Auxiliary/grid_search/Brandenburg/256_20_chips_masked_with_and_preds_are_GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop_prediction_extent/'
 
-files = list.files(path, full.names = T)
+files = list.files(path, pattern = '.csv', full.names = T)
 
 conti = map_dfr(files, read_csv)
 
