@@ -12,7 +12,7 @@ img_size = 128
 ## create metadata file
 metadata = {
     'inputs': {
-        'inputs_shape': (4, 6, img_size, img_size),  
+        'inputs_shape': (5, 6, img_size, img_size),  
         'inputs_dtype': np.float32     
     },
     'labels': {
@@ -24,7 +24,7 @@ metadata = {
 ## define function to load imgs and labs
 def names2array_function(names):
 
-    variables2use=['B2','B3','B4','B8']#,'NDVI']
+    variables2use=['B2','B3','B4','B8','NDVI']
 
     image_path, label_path = names
     # load image
@@ -81,7 +81,7 @@ for i in range(len(imgs)):
 
 ## create db
 
-output_dir = f'{dataFolder}output/rocks_db/AI4_RGB_exclude_{exclude}.db'
+output_dir = f'{dataFolder}output/rocks_db/AI4_RGB_NDVI_exclude_{exclude}.db'
 os.makedirs(output_dir, exist_ok=True)
 
 rasters2rocks = Rasters2RocksDB(

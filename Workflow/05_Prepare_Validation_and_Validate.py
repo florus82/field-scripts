@@ -15,8 +15,8 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
     
     predictions =  '/data/fields/output/predictions/FORCE/BRANDENBURG/vrt/256_20_chips.vrt' # predictions straight from GPU 
     #reference =  '/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop.tif' # mask from IACS
-    result_dir = '/data/fields/Auxiliary/grid_search/Brandenburg/' + predictions.split('/')[-1].split('.')[0] + '_masked_with_and_preds_are_' + reference.split('/')[-1].split('.')[0]
-    sub = predictions.split('/')[-1].split('.')[0] + '_masked_with_and_preds_are_' + reference.split('/')[-1].split('.')[0]
+    result_dir = '/data/fields/Auxiliary/grid_search/Brandenburg/' + predictions.split('/')[-1].split('.')[0] + '_preds_are_' + reference.split('/')[-1].split('.')[0]
+    sub = predictions.split('/')[-1].split('.')[0] + '_preds_are_' + reference.split('/')[-1].split('.')[0]
     folder_path = f'{result_dir}/intermediates/'
     vrt_for_folder_path = folder_path + 'vrt/'
     os.makedirs(folder_path, exist_ok=True)
@@ -29,7 +29,7 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
     # set the number of cores for parallel processing and set seed
     ncores = 30
     np.random.seed(42)
-    make_tifs_from_intermediate_step = True
+    make_tifs_from_intermediate_step = False
     ######### prepare job-list
 
 
@@ -129,7 +129,7 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
             extent_pred = pred_ds.GetRasterBand(1).ReadAsArray(col_start[j], row_start[i], col_end[j] - col_start[j], row_end[i] - row_start[i]) # goes into InstSegm --> image of crop probability 
             # mask extend_pred with reference
             extent_pred_masked = extent_pred * extent_true[row_start[i]:row_end[i], col_start[j]:col_end[j]]
-            
+
             # check if prediction subset of fields actually contains data
             if len(np.unique(extent_pred_masked)) == 1:
                 continue
@@ -139,8 +139,8 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
                 continue
             
             extent_true_list.append(extent_true_label)
-            extent_pred_list.append(extent_pred_masked)
-
+            # extent_pred_list.append(extent_pred_masked)
+            extent_pred_list.append(extent_pred)
             # make identifier for tile for csv
             tile_list.append(f'{str(i)}_{str(j)}')
             # load predicted boundary prob subset // goes into InstSegm --> image of boundary probability
@@ -148,6 +148,13 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
             # output folder
             result_dir_list.append(result_dir)
             row_col_start.append(str(row_start[i]) + '_' + str(col_start[j]))
+
+            # # double check
+            # export_intermediate_products(str(row_start[i]) + '_' + str(col_start[j]), extent_pred_masked, pred_ds.GetGeoTransform(), pred_ds.GetProjection(),\
+            #                       '/data/fields/Auxiliary/', filename='extend_pred_masked_false_' + str(row_start[i]) + '_' + str(col_start[j]) + '.tif', noData=0, typ='float')
+            
+            # export_intermediate_products(str(row_start[i]) + '_' + str(col_start[j]), extent_pred, pred_ds.GetGeoTransform(), pred_ds.GetProjection(),\
+            #                       '/data/fields/Auxiliary/', filename='extend_pred_false_' + str(row_start[i]) + '_' + str(col_start[j]) + '.tif', noData=0, typ='float')
 
     jobs = [[tile_list[i], row_col_start[i] ,extent_true_list[i], extent_pred_list[i], boundary_pred_list[i], result_dir_list[i],  pred_ds.GetGeoTransform(), pred_ds.GetProjection(), folder_path, border_limit]  for i in range(len(result_dir_list))]
 

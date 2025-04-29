@@ -9,8 +9,8 @@ import pandas as pd
 
 
 # set the rocksdb on which training will be performed
-db_name = 'AI4_RGB_exclude_True'
-
+db_name = 'AI4_RGB_NDVI_exclude_False'
+print(f'learn with {db_name}')
 # Set this to False for training
 #DEBUG=True
 DEBUG=False
@@ -103,7 +103,7 @@ def train(args):
     NClasses = 1
     nf = 96
     verbose = True
-    model_config = {'in_channels': 4,
+    model_config = {'in_channels': 5,
                     'spatial_size_init': (128, 128),
                     'depths': [2, 2, 5, 2],
                     'nfilters_init': nf,
