@@ -180,8 +180,8 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
 
 
     # make vrts out 
-    t_exts = [i/100 for i in range(10,95,5)] 
-    t_bounds = [i/100 for i in range(10,95,5)]
+    t_exts = [i/100 for i in range(10,55,5)] 
+    t_bounds = [i/100 for i in range(10,55,5)]
 
     ends = ['instance_pred', 'instance_true', 'intersected_at_max_and_centroids']
 
