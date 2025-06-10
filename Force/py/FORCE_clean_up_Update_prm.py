@@ -3,7 +3,7 @@ sys.path.append('/home/potzschf/repos/')
 from helperToolz.helpsters import *
 import shutil
 
-year = 2020
+year = 2017
 
 path = f'/data/Aldhani/eoagritwin/force/output/S3/{year}/'
 folders = [os.path.join(path, name) for name in os.listdir(path) if os.path.isdir(os.path.join(path, name))]
@@ -29,6 +29,7 @@ indices = [i for i, val in enumerate(combis_all) if val not in combis_on_disc]
 
 
 if len(indices) == 0:
+    _ = [os.remove(file) for file in getFilelist('/data/Aldhani/eoagritwin/force/parameterfile/S3/magic_subs', '.prm')]
     print('finished')
 else:
     pairs = [(x, y) for i, (x, y) in enumerate(zip(xx_values, yy_values)) if i in indices]
