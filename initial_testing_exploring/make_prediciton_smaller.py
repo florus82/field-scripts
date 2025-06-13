@@ -79,41 +79,103 @@ def map_value_to_color(value):
             return hex_to_rgba(hex_color)
     return (0, 0, 0, 0)
 
-# with rasterio.open(tiff_file_input) as src:
-#     band1 = src.read(1)
-#     profile = src.profile
-
 ds = gdal.Open(tiff_file_input, 0)
 bands = ds.RasterCount
 png_files = []
 for i in range(bands):
-    band = ds.GetRasterBand(i + 1).ReadAsArray()
+    # band = ds.GetRasterBand(i + 1).ReadAsArray()
 
-    # Create an empty RGBA array
-    rgba_image = np.zeros((band.shape[0], band.shape[1], 4), dtype=np.uint8)
+    # # Create an empty RGBA array
+    # rgba_image = np.zeros((band.shape[0], band.shape[1], 4), dtype=np.uint8)
 
-    # Flatten band1 and map each pixel's value to color
-    flat_band = band.flatten()
+    # # Flatten band1 and map each pixel's value to color
+    # flat_band = band.flatten()
 
-    print('create array')
-    # Create an array to hold RGBA values
-    colors = np.array([map_value_to_color(val) for val in flat_band], dtype=np.uint8)
-    print('start reshape')
-    # Reshape colors to image shape
-    rgba_image = colors.reshape((band.shape[0], band.shape[1], 4))
-    print('start conversion')
-    # Convert numpy RGBA array to PIL Image and save
-    im = Image.fromarray(rgba_image, mode="RGBA")
-    print('write away')
-    im.save(f'{outPath}_band_{i+1}.png', "PNG")
+    # print('create array')
+    # # Create an array to hold RGBA values
+    # colors = np.array([map_value_to_color(val) for val in flat_band], dtype=np.uint8)
+    # print('start reshape')
+    # # Reshape colors to image shape
+    # rgba_image = colors.reshape((band.shape[0], band.shape[1], 4))
+    # print('start conversion')
+    # # Convert numpy RGBA array to PIL Image and save
+    # im = Image.fromarray(rgba_image, mode="RGBA")
+    # print('write away')
+    # im.save(f'{outPath}_band_{i+1}.png', "PNG")
     png_files.append(f'{outPath}_band_{i+1}.png')
 
-
 # get bounding boxes
-
 bboxes = []
 with rasterio.open(tiff_file_input) as dataset:
     bounds = dataset.bounds
+    bboxes.append(bounds)
+
+from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.dom.minidom import parseString
+
+
+##### insert time dummy
+times = []
+# Monday
+first_day_of_year= datetime.fromisocalendar(2019, 1, 1)
+# Sunday
+last_day_of_year = first_day_of_year + timedelta(days=365)
+
+# 1 TIF = 1 calendar week in my case
+start_time = first_day_of_year.strftime("%Y-%m-%dT00:00:00Z")
+end_time = last_day_of_year.strftime("%Y-%m-%dT23:59:59Z")
+
+times.append((start_time, end_time))
+
+
+kml_files = []
+
+kml_start = """<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.0">
+<Document>"""
+
+kml_end = """</Document>
+</kml>"""
+
+filled_kml = ""
+
+for png_filename, (west, south, east, north), (begin, end) in zip(png_files, bboxes, times):    
+    kml_template = """
+ <Folder>
+    <name>Raster visibility</name>
+    <TimeSpan><begin>{begin}</begin><end>{end}</end></TimeSpan>
+    <Folder>
+      <name>Raster</name>
+      <GroundOverlay>
+          <name>Raster data</name>
+          <LatLonBox>
+            <north>{north}</north>
+            <south>{south}</south>
+            <west>{west}</west>
+            <east>{east}</east>
+          </LatLonBox>
+          <Icon>
+            <href>{href}</href>
+          </Icon>
+      </GroundOverlay>
+    </Folder>
+  </Folder>"""
+    filled_kml += kml_template.format(
+        begin=begin,
+        end=end,
+        north=north,
+        south=south,
+        west=west,
+        east=east,
+        href=os.path.basename(png_filename)
+    )
+
+filled_kml = f"{kml_start}{filled_kml}{kml_end}"
+
+with open(output_kml_path, 'w') as f:
+    f.write(filled_kml)
+print(f"KML file {output_kml_path} generated successfully")
+
 
 # generate the kmz file
 import zipfile
