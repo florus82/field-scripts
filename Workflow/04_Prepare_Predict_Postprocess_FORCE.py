@@ -7,8 +7,8 @@ from helperToolz.helpsters import *
 
 # make vrts from force outputs for easier processing
 year = 2019
-reduced_files = reduce_force_to_validmonths(f'/data/Aldhani/eoagritwin/force/output/BRANDENBURG/{year}/', 3, 8)
-ordered_files = force_order_BGRBNR(reduced_files)
+reduced_files = reduce_forceTSA_output_to_validmonths(f'/data/Aldhani/eoagritwin/force/output/BRANDENBURG/{year}/', 3, 8)
+ordered_files = getCOLORSinOrderFORCELIST(reduced_files, ['BLU', 'GRN', 'RED', 'BRN'])
 force_to_vrt(reduced_files, ordered_files, f'/data/Aldhani/eoagritwin/fields/Auxiliary/vrt/{year}_2/', True)
 
 # # load vrts into npdstack
