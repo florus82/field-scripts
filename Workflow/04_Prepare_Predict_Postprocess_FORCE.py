@@ -9,10 +9,10 @@ from helperToolz.helpsters import *
 year = 2019
 reduced_files = reduce_forceTSA_output_to_validmonths(f'/data/Aldhani/eoagritwin/force/output/BRANDENBURG/{year}/', 3, 8)
 ordered_files = getCOLORSinOrderFORCELIST(reduced_files, ['BLU', 'GRN', 'RED', 'BRN'])
-force_to_vrt(reduced_files, ordered_files, f'/data/Aldhani/eoagritwin/fields/Auxiliary/vrt/{year}_2/', True)
+force_to_vrt(reduced_files, ordered_files, f'/data/Aldhani/eoagritwin/fields/Auxiliary/vrt/{year}_2/', True, bandnames=['BLU', 'GRN', 'RED', 'BRN'])
 
 # # load vrts into npdstack
-# dat = loadVRTintoNumpyAI4(f'/data/fields/Auxiliary/vrt/{year}/{get_forcetiles_range(reduced_files)}')
+# dat = loadVRTintoNumpyAI4(f'/data/fields/Auxiliary/vrt/{year}/{getFORCExyRangeName(get_forcetiles_range(reduced_files))}')
 
 # # set tiling scheme and chip size on which prediction will be undertaken
 # chipsize = 128*1 # 5 is the maximum with GPU in basement
@@ -29,7 +29,7 @@ force_to_vrt(reduced_files, ordered_files, f'/data/Aldhani/eoagritwin/fields/Aux
 # # export the predicted chips (masked and not masked)
 # export_GPU_predictions(predicted_chips_list, 
 #                        '/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_false_lines_touch_false_linecrop.tif', 
-#                        f'/data/fields/Auxiliary/vrt/{year}/{get_forcetiles_range(reduced_files)}',row_col_ind, 
+#                        f'/data/fields/Auxiliary/vrt/{year}/{getFORCExyRangeName(get_forcetiles_range(reduced_files))}',row_col_ind, 
 #                        '/data/fields/output/predictions/FORCE/BRANDENBURG/{year}/')
 
 
