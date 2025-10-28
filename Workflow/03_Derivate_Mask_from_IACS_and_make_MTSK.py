@@ -40,12 +40,25 @@ rasterize_lines(f'/data/{origin}fields/IACS/2_Lines/GSA-DE_{spat_temp_id}.gpkg',
 make_crop_mask(polygon_path, 
                f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_true.tif', 
                vrt_path, 
-               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_true.tif')
+               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_true_crop_touch_true.tif', True)
 
 make_crop_mask(polygon_path, 
                f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_false.tif', 
                vrt_path, 
-               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_false.tif')
+               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_false_crop_touch_true.tif', True)
+
+
+
+
+make_crop_mask(polygon_path, 
+               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_true.tif', 
+               vrt_path, 
+               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_true_crop_touch_false.tif', False)
+
+make_crop_mask(polygon_path, 
+               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_false.tif', 
+               vrt_path, 
+               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_false_crop_touch_false.tif', False)
 
 
 

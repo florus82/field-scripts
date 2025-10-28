@@ -1,7 +1,6 @@
 from sklearn.linear_model import LinearRegression
 from skimage import measure
 from joblib import Parallel, delayed
-
 import sys
 sys.path.append('/home/potzschf/repos/')
 from helperToolz.helpsters import *
@@ -10,18 +9,22 @@ from helperToolz.helpsters import *
 #########################  parameter settings
 # load the predictions and labels
 
+year = 2023
+
 for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop_prediction_extent.tif',
                   '/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_false_lines_touch_false_linecrop_prediction_extent.tif']:
     
-    predictions =  '/data/fields/output/predictions/FORCE/BRANDENBURG/vrt/256_20_chips.vrt' # predictions straight from GPU 
+    predictions =  f'/data/fields/output/predictions/FORCE/BRANDENBURG/{year}/vrt/256_20_chips.vrt' # predictions straight from GPU 
     #reference =  '/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop.tif' # mask from IACS
-    result_dir = '/data/fields/Auxiliary/grid_search/Brandenburg/' + predictions.split('/')[-1].split('.')[0] + '_preds_are_' + reference.split('/')[-1].split('.')[0]
+    
+    result_dir = f'/data/fields/Auxiliary/grid_search/Brandenburg/{year}/' + predictions.split('/')[-1].split('.')[0] + '_preds_are_' + reference.split('/')[-1].split('.')[0]
     sub = predictions.split('/')[-1].split('.')[0] + '_preds_are_' + reference.split('/')[-1].split('.')[0]
     folder_path = f'{result_dir}/intermediates/'
     vrt_for_folder_path = folder_path + 'vrt/'
     os.makedirs(folder_path, exist_ok=True)
     os.makedirs(vrt_for_folder_path, exist_ok=True)
     os.makedirs(result_dir, exist_ok=True)
+
     # set the number by which rows and cols will be divided --> determines the number of tiles // also set border limit (dont sample fields too close to tile borders) and sample size
     slicer = 10
     border_limit = 5
@@ -88,7 +91,7 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
     if make_tifs_from_intermediate_step:
         # Create filtered array with only valid IDs preserved for export
         filtered_instances = np.where(np.isin(instances_true, unique_IDs), instances_true, 0)
-        makeTif_np_to_matching_tif(filtered_instances, reference, vrt_for_folder_path + 'chips_border_cut.tif', 0)
+        makeTif_np_to_matching_tif(filtered_instances, reference, vrt_for_folder_path + 'chips_border_cut.tif', 0, gdalType=gdal.GDT_UInt32)
         makePyramidsForTif(vrt_for_folder_path + 'chips_border_cut.tif')
 
     # exlude 0 (background) and 1 (super-small fields) from sample
@@ -156,7 +159,7 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
             # export_intermediate_products(str(row_start[i]) + '_' + str(col_start[j]), extent_pred, pred_ds.GetGeoTransform(), pred_ds.GetProjection(),\
             #                       '/data/fields/Auxiliary/', filename='extend_pred_false_' + str(row_start[i]) + '_' + str(col_start[j]) + '.tif', noData=0, typ='float')
 
-    jobs = [[tile_list[i], row_col_start[i] ,extent_true_list[i], extent_pred_list[i], boundary_pred_list[i], result_dir_list[i],  pred_ds.GetGeoTransform(), pred_ds.GetProjection(), folder_path, border_limit]  for i in range(len(result_dir_list))]
+    jobs = [[tile_list[i], row_col_start[i] ,extent_true_list[i], extent_pred_list[i], boundary_pred_list[i], result_dir_list[i],  pred_ds.GetGeoTransform(), pred_ds.GetProjection(), folder_path, border_limit, False]  for i in range(len(result_dir_list))]
 
     print(f'\n{len(tile_list)} tiles will be processed\n')
 
@@ -168,7 +171,7 @@ for reference in ['/data/fields/IACS/4_Crop_mask/GSA-DE_BRB-2019_cropMask_lines_
         print("Starting process, time:" + starttime)
         print("")
 
-        Parallel(n_jobs=ncores)(delayed(get_IoUs_per_Tile)(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9]) for i in jobs)
+        Parallel(n_jobs=ncores)(delayed(get_IoUs_per_Tile)(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10]) for i in jobs)
 
         print("")
         endtime = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
