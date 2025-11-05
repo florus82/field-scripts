@@ -12,7 +12,7 @@ img_size = 128
 ## create metadata file
 metadata = {
     'inputs': {
-        'inputs_shape': (5, 6, img_size, img_size),  
+        'inputs_shape': (4, 6, img_size, img_size),  
         'inputs_dtype': np.float32     
     },
     'labels': {
@@ -24,7 +24,7 @@ metadata = {
 ## define function to load imgs and labs
 def names2array_function(names):
 
-    variables2use=['B2','B3','B4','B8','NDVI']
+    variables2use=['B2','B3','B4','B8']#,'NDVI']
 
     image_path, label_path = names
     # load image
@@ -54,6 +54,7 @@ def names2array_function16(names):
 
 ## create list of images and labels
 
+# database for AI4Boundaries
 folders = ['LU', 'AT', 'ES', 'FR', 'NL', 'SE', 'SI']
 imgs = [getFilelist(dataFolder + 'ai4boundaries/sentinel2/images/' + folder, '.nc') for folder in folders]
 imgs = [img for list in imgs for img in list]

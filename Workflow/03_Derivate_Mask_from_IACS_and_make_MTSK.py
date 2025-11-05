@@ -20,45 +20,48 @@ exclude_list = ['afforestation_reforestation',
 year = 2023
 spat_temp_id = f'BRB-{year}'
 
+state = 'Brandenburg'
+state_year = f'{state}_{year}'
+
 polygon_path = f'/data/{origin}fields/IACS/1_Polygons/GSA-DE_{spat_temp_id}.geoparquet'
 vrt_path = f'/data/{origin}fields/Auxiliary/vrt/{year}/Force_X_from_64_to_73_Y_from_39_to_47//Force_X_from_64_to_73_Y_from_39_to_47_0.vrt'
 # convert lines to polyongs
 polygons_to_lines(polygon_path,
-                  f'/data/{origin}fields/IACS/2_Lines/GSA-DE_{spat_temp_id}.gpkg',
+                  f'/data/{origin}fields/IACS/2_Lines/IACS_{state_year}.gpkg',
                   exclude_list)
 
 # rasterize lines
-rasterize_lines(f'/data/{origin}fields/IACS/2_Lines/GSA-DE_{spat_temp_id}.gpkg', 
+rasterize_lines(f'/data/{origin}fields/IACS/2_Lines/GSA-DE_{state_year}.gpkg', 
                 vrt_path, 
-                f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_true.tif', all_touch=True)
+                f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{state_year}_lines_touch_true.tif', all_touch=True)
 
-rasterize_lines(f'/data/{origin}fields/IACS/2_Lines/GSA-DE_{spat_temp_id}.gpkg', 
+rasterize_lines(f'/data/{origin}fields/IACS/2_Lines/GSA-DE_{state_year}.gpkg', 
                 vrt_path, 
-                f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_false.tif', all_touch=False)
+                f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{state_year}_lines_touch_false.tif', all_touch=False)
 
 # make a crop mask
 make_crop_mask(polygon_path, 
-               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_true.tif', 
+               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{state_year}_lines_touch_true.tif', 
                vrt_path, 
-               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_true_crop_touch_true.tif', True)
+               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{state_year}_cropMask_lines_touch_true_crop_touch_true.tif', True)
 
 make_crop_mask(polygon_path, 
-               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_false.tif', 
+               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{state_year}_lines_touch_false.tif', 
                vrt_path, 
-               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_false_crop_touch_true.tif', True)
+               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{state_year}_cropMask_lines_touch_false_crop_touch_true.tif', True)
 
 
 
 
 make_crop_mask(polygon_path, 
-               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_true.tif', 
+               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{state_year}_lines_touch_true.tif', 
                vrt_path, 
-               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_true_crop_touch_false.tif', False)
+               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{state_year}_cropMask_lines_touch_true_crop_touch_false.tif', False)
 
 make_crop_mask(polygon_path, 
-               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{spat_temp_id}_lines_touch_false.tif', 
+               f'/data/{origin}fields/IACS/3_Rasterized_lines/{year}/GSA-DE_{state_year}_lines_touch_false.tif', 
                vrt_path, 
-               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{spat_temp_id}_cropMask_lines_touch_false_crop_touch_false.tif', False)
+               f'/data/{origin}fields/IACS/4_Crop_mask/{year}/GSA-DE_{state_year}_cropMask_lines_touch_false_crop_touch_false.tif', False)
 
 
 

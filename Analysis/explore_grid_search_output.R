@@ -1,14 +1,16 @@
 library(tidyverse)
 
-path = 'Z:/fields/Auxiliary/grid_search/Brandenburg/256_20_chips_masked_with_and_preds_are_GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop_prediction_extent/'
-path = 'Z:/fields/Auxiliary/grid_search/Brandenburg/256_20_chips_preds_are_GSA-DE_BRB-2019_cropMask_lines_touch_true_lines_touch_true_linecrop_prediction_extent/'
+path = 'Z:/fields/Auxiliary/grid_search/Brandenburg/2023/lines_touch_false_crop_touch_false_256_20GSA-DE_BRB-2023_cropMask_lines_touch_false_crop_touch_false_prediction_extent/'
+
 
 files = list.files(path, pattern = '.csv', full.names = T)
 
 conti = map_dfr(files, read_csv)
 
 conti %>% 
-  filter(reference_field_sizes > 0) %>% 
+  filter(reference_field_sizes > 5,
+         intersect_area > 0.5) %>% 
+  
   # filter(max_IoU > 0) %>% 
   group_by(t_ext, t_bound) %>% 
   summarise(mean_IoU_max = mean(max_IoU),
@@ -43,4 +45,8 @@ conti %>%
             median_IoU_max = median(max_IoU),
             count = n())
 
+conti %>% 
+  ggplot(aes(x = reference_field_sizes)) + 
+  geom_histogram(binwidth = 2000) + 
+  theme_minimal()
 
