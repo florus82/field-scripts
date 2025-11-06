@@ -49,9 +49,9 @@ overlap  = 20
 row_col_ind = get_row_col_indices(chipsize, overlap, dat.shape[2:][0], dat.shape[2:][1])
 
 # ####################################################### Predict
-# print('start prediction')
-# predicted_chips_list = predict_on_GPU(f'{prefix}fields/output/models/{model_name}.pth', row_col_ind, dat, 
-#                                       temp_path=f'{predict_master_folder}temp/')# model_state_All_but_LU_transformed_42
+print('start prediction')
+predicted_chips_list = predict_on_GPU(f'{prefix}fields/output/models/{model_name}.pth', row_col_ind, dat, 
+                                      temp_path=f'{predict_master_folder}temp/')# model_state_All_but_LU_transformed_42
 
 ####################################################### Postprocess
 print('start exporting')

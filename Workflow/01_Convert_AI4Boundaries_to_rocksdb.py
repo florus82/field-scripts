@@ -12,7 +12,7 @@ img_size = 128
 ## create metadata file
 metadata = {
     'inputs': {
-        'inputs_shape': (4, 6, img_size, img_size),  
+        'inputs_shape': (4, 6, img_size, img_size),  # bands, time, rows, cols
         'inputs_dtype': np.float32     
     },
     'labels': {
