@@ -14,34 +14,36 @@ model_name = 'AI4_RGB_exclude_False_47'
 ncores = 56
 
 
-pred_list = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/{model_name}/{year}/vrt/', '.vrt')\
-              if 'unmasked' not in file]
-ref_list = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/{year}/', '.tif') if 'prediction_extent' in file]
+# pred_list = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/{model_name}/{year}/vrt/', '.vrt')\
+#               if 'unmasked' not in file]
+# ref_list = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/{year}/', '.tif') if 'prediction_extent' in file]
 
-pred_list_sorted, ref_list_sorted = [], []
-for pred in pred_list:
-    for ref in ref_list:
-        if '_'.join(pred.split('/')[-1].split('_')[:-2]) == ref.split('cropMask_')[-1].split('_prediction_extent')[0]:
-            pred_list_sorted.append(pred)
-            ref_list_sorted.append(ref)
-        else:
-            pass
+# pred_list_sorted, ref_list_sorted = [], []
+# for pred in pred_list:
+#     for ref in ref_list:
+#         if '_'.join(pred.split('/')[-1].split('_')[:-2]) == ref.split('cropMask_')[-1].split('_prediction_extent')[0]:
+#             pred_list_sorted.append(pred)
+#             ref_list_sorted.append(ref)
+#         else:
+#             pass
 
-# pred_list_sorted = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/{year}/vrt/', '.vrt') if 'unmasked' in file]
-# ref_list_sorted = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/{year}/', '.tif') if all(crit in file for crit in ['linecrop', 'prediction_extent', 'lines_touch_true_crop_touch_true'])]
-overlords_jobs = []
+pred_list_sorted = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/{model_name}/{year}/vrt/', '.vrt') if 'unmasked' in file]
+ref_list_sorted = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/{year}/', '.tif') if all(crit in file for crit in ['linecrop', 'prediction_extent', 'lines_touch_true_crop_touch_true'])]
+# overlords_jobs = []
 
 
 print(ref_list_sorted)
 
 
 for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
-    result_dir = path_safe(f'/data/Aldhani/eoagritwin/fields/Auxiliary/grid_search/Brandenburg/{model_name}/{year}/' + reference.split('/')[-1].split('.')[0]) # + prediction.split('/')[-1].split('.')[0] 
+    if 'unmasked' in prediction:
+        result_dir = f'/data/Aldhani/eoagritwin/fields/Auxiliary/grid_search/Brandenburg/{model_name}/{year}/' + prediction.split('/')[-1].split('.')[0] + reference.split('/')[-1].split('.')[0]
+    else:
+        result_dir = f'/data/Aldhani/eoagritwin/fields/Auxiliary/grid_search/Brandenburg/{model_name}/{year}/' + reference.split('/')[-1].split('.')[0]
     sub = prediction.split('/')[-1].split('.')[0] + '_preds_are_' + reference.split('/')[-1].split('.')[0]
-    folder_path = f'{result_dir}/intermediates/'
-    results_folder_path = f'{result_dir}/results/'
+    folder_path = path_safe(f'{result_dir}/intermediates/')
+    results_folder_path = path_safe(f'{result_dir}/results/')
     
-    [os.makedirs(setpath, exist_ok=True) for setpath in [folder_path, result_dir, results_folder_path]]
     
 
     # set the number by which rows and cols will be divided --> determines the number of tiles // also set border limit (dont sample fields too close to tile borders) and sample size
@@ -196,7 +198,7 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
 
     del row_col_start, extent_true_list, extent_pred_list, boundary_pred_list, result_dir_list, border_limit
 
-    overlords_jobs.append(jobs)
+    # overlords_jobs.append(jobs)
 
 
 if __name__ == '__main__':
@@ -205,7 +207,7 @@ if __name__ == '__main__':
     print("Starting process, time:" + starttime)
     print("")
 
-    Parallel(n_jobs=ncores)(delayed(get_IoUs_per_Tile)(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8]) for jobs in overlords_jobs for i in jobs)  
+    Parallel(n_jobs=ncores)(delayed(get_IoUs_per_Tile)(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8]) for i in jobs)   # for jobs in overlords_jobs 
 
     print("")
     endtime = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
