@@ -8,7 +8,6 @@ from helperToolz.helpsters import *
 
 #########################  parameter settings
 # load the prediction and labels
-
 year = 2023
 model_name = 'AI4_RGB_exclude_False_47'
 ncores = 56
