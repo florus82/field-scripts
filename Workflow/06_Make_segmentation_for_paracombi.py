@@ -18,6 +18,7 @@ state = 'Brandenburg'
 t_exts = [0.1, 0.1] 
 t_bounds = [0.65, 0.7]
 
+
 # load precitions
 unmasked = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/{model_name}/{year}/vrt/', '.vrt')\
              if 'unmasked' in file][0]
@@ -28,12 +29,15 @@ masked = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/
 ref = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/{year}/', '.tif') if 'prediction_extent' in file and
        f'lines_touch_{all_touch_lines}_crop_touch_{all_touch_field}_linecrop' in file][0]
 
-
+# t_exts = [0.1] * len(ref)
+# t_bounds = [0.65] * len(ref)
 
 for prediction, reference, t_ext, t_bound in zip([unmasked, masked], [ref, ref], t_exts, t_bounds):
+#for prediction, reference, t_ext, t_bound in zip([unmasked]*len(ref), ref, t_exts, t_bounds):
+
     if 'unmasked' in prediction:
         result_dir = path_safe(
-            f'/data/Aldhani/eoagritwin/fields/segmented/{state}/{model_name}/{year}/unmasked_text{t_ext}_tbound{t_bound}/'
+            f"/data/Aldhani/eoagritwin/fields/segmented/{state}/{model_name}/{year}/unmasked_text{t_ext}_tbound{t_bound}/"#{reference.split('/')[-1].split('GSA-DE_BRB-2023_cropMask_')[-1].split('_prediction')[0]}/"
             )
     else:
         result_dir = path_safe(
