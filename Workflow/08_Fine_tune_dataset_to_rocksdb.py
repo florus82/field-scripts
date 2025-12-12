@@ -106,6 +106,11 @@ for state, state_folder, state_type, state_exclude_column, state_burner, year in
     # 4. distance to border raster
     # as calculating the distance layer for the entire state is computational-wise too expensive, we cut image first in chips
 
+    dist_path = f'{temp_folder}{state}/{state}_{year}_distance_to_border.vrt'
+    if os.path.exists(dist_path):
+        print(f'{dist_path} already created')
+        continue
+
     vrt_ds = gdal.Open(fieldsID_path)
     geoTF = vrt_ds.GetGeoTransform()
     prj = vrt_ds.GetProjection()
@@ -139,12 +144,10 @@ for state, state_folder, state_type, state_exclude_column, state_burner, year in
             del out_ds
     
     # create a distance vrt
-    dist_path = f'{temp_folder}{state}/{state}_{year}_distance_to_border.vrt'
     vrt = gdal.BuildVRT(dist_path,
                         [file for file in getFilelist(f'{temp_folder}{state}/', '.tif') if all(substr in file for substr in ['rs', 'cs'])])
     vrt = None
     print('distance calculated rasterized')
-
 
 
 
@@ -154,6 +157,7 @@ band_lkp = {0:'Field', 1:'Border',  2:'Distance', 3:'Fields'}
 # initialize result lists
 result = {
     'state': [],
+    'year': [],
     'band': [],
     'row_start': [],
     'row_end': [],
@@ -185,6 +189,7 @@ for state, year in zip(states, years):
                 sub = arr_stack[row_start[i]:row_end[i], col_start[j]:col_end[j],band]
                 # take the sum and append
                 result['state'].append(state)
+                result['year'].append(year)
                 result['band'].append(band_lkp[band])
                 result['row_start'].append(row_start[i])
                 result['row_end'].append(row_end[i])
@@ -199,7 +204,25 @@ for state, year in zip(states, years):
 # Convert results dict to DataFrame
 df = pd.DataFrame(result)
 
-df_nonZero = df[df['PixelCount'] > 10]
+### get a list of row col combis that only result in NA image pixel as they are out of bounds
+df_mask = []
+
+for (state, year), group in df.groupby(['state', 'year']):
+    arr = stackReader([file for file in getFilelist(f'{aux_vrt_path}{state_folders[states.index(state)]}/{year}/', '.vrt', deep=True) if '_Cube' in file][0])
+    sub_df_0 = df[(df.state == state) & (df.year == year)]
+
+    mask = sub_df_0.apply(
+    lambda r: np.any(
+        arr[r.row_start:r.row_end, r.col_start:r.col_end, ...] == -9999
+    ),
+    axis=1 # makes it row-wise
+    )
+
+    df_mask.append(sub_df_0[~mask].copy())
+
+df_masked = pd.concat(df_mask)
+
+df_nonZero = df_masked[df_masked['PixelCount'] > 10]
 state_sizes = df_nonZero['state'].value_counts()
 samples_per_state = np.ceil(state_sizes / state_sizes.sum() * Total_number_of_samples).astype(int)
 
@@ -244,13 +267,31 @@ for stati in df_nonZero['state'].unique():
             .drop(columns=['_merge'])
             )
 
-# 6. Combine all sampled data and add 5% of complete 0 raster chips
+# 6. Combine all sampled data and add 5% of complete 0 raster
 sample_df = pd.concat(samples).reset_index(drop=True)
 samp0 = int(len(sample_df) / 20)
-# filter the original df for a state and rol col combi, where field and border are both 0
+# filter the oroginal df_masked for a state and rol col combi, where field and border are both 0
 colkeys_state = colkeys + ['state']
-df_all0 = df.groupby(colkeys_state).filter(lambda g: (g[g['band'].isin(['Field', 'Border'])]['PixelCount'] == 0).all())
+df_all0 = df_masked.groupby(colkeys_state).filter(lambda g: (g[g['band'].isin(['Field', 'Border'])]['PixelCount'] == 0).all())
 df_all0_unique = df_all0[df_all0['band'] == 'Field'] # drop duplicates for state row col combi
+
+# ### get a list of row col combis that only result in NA image pixel as they are out of bounds
+# df_all0_masked = []
+
+# for (state, year), group in df_all0_unique.groupby(['state', 'year']):
+#     arr = stackReader([file for file in getFilelist(f'{aux_vrt_path}{state_folders[states.index(state)]}/{year}/', '.vrt', deep=True) if '_Cube' not in file][0])
+#     sub_df_0 = df_all0_unique[(df_all0_unique.state == state) & (df_all0_unique.year == year)]
+
+#     mask = sub_df_0.apply(
+#     lambda r: np.any(
+#         arr[r.row_start:r.row_end, r.col_start:r.col_end] == -9999
+#     ),
+#     axis=1 # makes it row-wise
+#     )
+
+#     df_all0_masked.append(sub_df_0[~mask].copy())
+
+# df_all0_masked_unique = pd.concat(df_all0_masked)
 
 
 # get distribution of empty chips per state
@@ -319,6 +360,7 @@ for state, state_folder, year in zip(states, state_folders, years):
 
         for bandx in range(arr_stack.shape[-1]):
             out_ds.GetRasterBand(bandx + 1).WriteArray(arr_stack[row['row_start']:row['row_end'], row['col_start']:row['col_end'],bandx])
+            out_ds.GetRasterBand(bandx + 1).SetNoDataValue(-10000)
         del out_ds
 
         # make Sentinel-2 chips as .nc

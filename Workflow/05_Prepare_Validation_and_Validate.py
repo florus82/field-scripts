@@ -9,30 +9,27 @@ from helperToolz.helpsters import *
 #########################  parameter settings
 # load the prediction and labels
 year = 2023
-model_name = 'AI4_RGB_exclude_False_47'
+model_name = 'AI4_RGB_exclude_True_38'
 ncores = 56
 
 
-# pred_list = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/{model_name}/{year}/vrt/', '.vrt')\
-#               if 'unmasked' not in file]
-# ref_list = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/{year}/', '.tif') if 'prediction_extent' in file]
+pred_list = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/{model_name}/{year}/vrt/', '.vrt')\
+              if 'unmasked' not in file]
+ref_list = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/{year}/', '.tif') if 'prediction_extent' in file]
 
-# pred_list_sorted, ref_list_sorted = [], []
-# for pred in pred_list:
-#     for ref in ref_list:
-#         if '_'.join(pred.split('/')[-1].split('_')[:-2]) == ref.split('cropMask_')[-1].split('_prediction_extent')[0]:
-#             pred_list_sorted.append(pred)
-#             ref_list_sorted.append(ref)
-#         else:
-#             pass
+pred_list_sorted, ref_list_sorted = [], []
+for pred in pred_list:
+    for ref in ref_list:
+        if '_'.join(pred.split('/')[-1].split('_')[:-2]) == ref.split('cropMask_')[-1].split('_prediction_extent')[0]:
+            pred_list_sorted.append(pred)
+            ref_list_sorted.append(ref)
+        else:
+            pass
 
-pred_list_sorted = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/{model_name}/{year}/vrt/', '.vrt') if 'unmasked' in file]
-ref_list_sorted = [file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/{year}/', '.tif') if all(crit in file for crit in ['linecrop', 'prediction_extent', 'lines_touch_true_crop_touch_true'])]
-# overlords_jobs = []
+pred_list_sorted.append([file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/BRANDENBURG/{model_name}/{year}/vrt/', '.vrt') if 'unmasked' in file][0])
+ref_list_sorted.append([file for file in getFilelist(f'/data/Aldhani/eoagritwin/fields/IACS/4_Crop_mask/{year}/', '.tif') if all(crit in file for crit in ['linecrop', 'prediction_extent', 'lines_touch_true_crop_touch_true'])][0])
 
-
-print(ref_list_sorted)
-
+overlords_jobs = []
 
 for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
     if 'unmasked' in prediction:
@@ -42,8 +39,6 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
     sub = prediction.split('/')[-1].split('.')[0] + '_preds_are_' + reference.split('/')[-1].split('.')[0]
     folder_path = path_safe(f'{result_dir}/intermediates/')
     results_folder_path = path_safe(f'{result_dir}/results/')
-    
-    
 
     # set the number by which rows and cols will be divided --> determines the number of tiles // also set border limit (dont sample fields too close to tile borders) and sample size
     slicer = 10
@@ -51,7 +46,7 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
     sample_size  = 10000
     # set the number of cores for parallel processing and set seed
     np.random.seed(42)
-    make_tifs_from_intermediate_step = True
+    make_tifs_from_intermediate_step = False
 
     ######### prepare job-list
 
@@ -62,7 +57,6 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
     boundary_pred_list = []
     result_dir_list = []
     row_col_start = []
-
 
     # tile predictions in prds --> total extent encompasses 90 Force Tiles (+ a few rows and cols that will be neglected as they are outside of study area)
     pred_ds = gdal.Open(prediction)
@@ -75,7 +69,6 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
     col_start = [i for i in range(0, cols, math.floor(cols/slicer))]
     col_end = [i for i in range (math.floor(cols/slicer), cols, math.floor(cols/slicer))]
     col_start = col_start[:len(col_end)] 
-
 
     # load IACS reference mask and label it 
     ref_ds = gdal.Open(reference)
@@ -114,7 +107,7 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
         makePyramidsForTif(folder_path + 'chips_border_cut.tif')
 
     # exlude 0 (background) and 1 (super-small fields) from sample
-    pixelthresh = 0
+    pixelthresh = 5
     while True:
         mask = (unique_IDs != 0)  & (counts > pixelthresh)
         unique_IDs = unique_IDs[mask]
@@ -160,11 +153,14 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
             #subset the prediction of fields read-in
             extent_pred = pred_ds.GetRasterBand(1).ReadAsArray(col_start[j], row_start[i], col_end[j] - col_start[j], row_end[i] - row_start[i]) # goes into InstSegm --> image of crop probability 
             # # mask extend_pred with reference
-            # extent_pred_masked = extent_pred * extent_true[row_start[i]:row_end[i], col_start[j]:col_end[j]]
+            if 'unmasked' in prediction:
+                pass
+            else:
+                extent_pred_masked = extent_pred * extent_true[row_start[i]:row_end[i], col_start[j]:col_end[j]]
 
-            # # check if prediction subset of fields actually contains data
-            # if len(np.unique(extent_pred_masked)) == 1:
-            #     continue
+            # check if prediction subset of fields actually contains data
+            if len(np.unique(extent_pred_masked)) == 1:
+                continue
 
             # check if tile contains a sample of reference/label data
             extent_true_label = instances_true[row_start[i]:row_end[i], col_start[j]:col_end[j]]
@@ -172,8 +168,10 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
                 continue
             
             extent_true_list.append(extent_true_label)
-            # extent_pred_list.append(extent_pred_masked)
-            extent_pred_list.append(extent_pred)
+            if 'unmasked' in prediction:
+                extent_pred_list.append(extent_pred)
+            else:
+                extent_pred_list.append(extent_pred_masked)
             
             # make identifier for tile for csv
             # tile_list.append(f'{str(i)}_{str(j)}')
@@ -191,13 +189,13 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
                 export_intermediate_products(str(row_start[i]) + '_' + str(col_start[j]), extent_pred, pred_ds.GetGeoTransform(), pred_ds.GetProjection(),\
                                     folder_path, filename='extend_pred_false_' + str(row_start[i]) + '_' + str(col_start[j]) + '.tif', noData=0, typ='float')
 
-    jobs = [[row_col_start[i] ,extent_true_list[i], extent_pred_list[i], boundary_pred_list[i], result_dir_list[i],  pred_ds.GetGeoTransform(), pred_ds.GetProjection(), folder_path, True]  for i in range(len(result_dir_list))]
+    jobs = [[row_col_start[i] ,extent_true_list[i], extent_pred_list[i], boundary_pred_list[i], result_dir_list[i],  pred_ds.GetGeoTransform(), pred_ds.GetProjection(), folder_path, False]  for i in range(len(result_dir_list))]
     # tile_list[i], 
     print(f'\n{len(jobs)} tiles will be processed\n')
 
     del row_col_start, extent_true_list, extent_pred_list, boundary_pred_list, result_dir_list, border_limit
 
-    # overlords_jobs.append(jobs)
+    overlords_jobs.append(jobs)
 
 
 if __name__ == '__main__':
@@ -206,7 +204,7 @@ if __name__ == '__main__':
     print("Starting process, time:" + starttime)
     print("")
 
-    Parallel(n_jobs=ncores)(delayed(get_IoUs_per_Tile)(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8]) for i in jobs)   # for jobs in overlords_jobs 
+    Parallel(n_jobs=ncores)(delayed(get_IoUs_per_Tile)(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8]) for jobs in overlords_jobs for i in jobs)   
 
     print("")
     endtime = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())

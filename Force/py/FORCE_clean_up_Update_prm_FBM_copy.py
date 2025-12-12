@@ -5,8 +5,8 @@ import shutil
 
 
 ######################################################## year and paths
-year = 2021
-state = 'BW'
+year = 2020
+state = 'BYN'
 tile_path = path_safe(f'/data/Aldhani/eoagritwin/force/output/{state}/{year}/')
 prm_file = f'/data/Aldhani/eoagritwin/force/parameterfile/{state}/{year}_FBM_magic.prm'
 prm_file_clean = f'/data/Aldhani/eoagritwin/force/parameterfile/{state}/{year}_FBM_magic_cleanUp.prm'

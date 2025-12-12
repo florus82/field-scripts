@@ -65,7 +65,7 @@ FREEZER = 2
 #DEBUG=True
 DEBUG=False
 
-def mtsk_loss(preds, labels,criterion, NClasses=1):                   
+def mtsk_loss(preds, labels, criterion, NClasses=1):                   
     # Multitasking loss,    segmentation / boundaries/ distance     
                                                                     
     pred_segm  = preds[:,:NClasses]                                 
