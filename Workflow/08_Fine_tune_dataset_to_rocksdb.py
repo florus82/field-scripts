@@ -35,7 +35,7 @@ state_burners = ['field_id', 'field_id', 'ID', 'field_id','LWREFSID']
 years = [2022, 2024, 2023, 2020, 2021]
 
 chip_size = 256
-Total_number_of_samples = 1500
+Total_number_of_samples = 3500
 gtiff_driver = gdal.GetDriverByName('GTiff')
 nc_band_names = ["B2", "B3", "B4", "B8"]
 
@@ -91,7 +91,7 @@ for state, state_folder, state_type, state_exclude_column, state_burner, year in
                     path_to_extent_raster=vrt_cube_path, 
                     path_to_rasterlines_out=borders_path,
                     all_touch=True,
-                    dilate=True)
+                    dilate=False)
     print('field borders rasterized')
     # 3. get field IDs 
     make_crop_mask(path_to_polygon=path,
@@ -213,7 +213,8 @@ for (state, year), group in df.groupby(['state', 'year']):
 
     mask = sub_df_0.apply(
     lambda r: np.any(
-        arr[r.row_start:r.row_end, r.col_start:r.col_end, ...] == -9999
+        arr[r.row_start:r.row_end, r.col_start:r.col_end, ...] < 0 |
+        np.isnan(arr[r.row_start:r.row_end, r.col_start:r.col_end, ...]) #== -9999
     ),
     axis=1 # makes it row-wise
     )
@@ -269,7 +270,8 @@ for stati in df_nonZero['state'].unique():
 
 # 6. Combine all sampled data and add 5% of complete 0 raster
 sample_df = pd.concat(samples).reset_index(drop=True)
-samp0 = int(len(sample_df) / 20)
+samp0 = int(len(sample_df) / 80)
+print(f"Sample 0 : {samp0}")
 # filter the oroginal df_masked for a state and rol col combi, where field and border are both 0
 colkeys_state = colkeys + ['state']
 df_all0 = df_masked.groupby(colkeys_state).filter(lambda g: (g[g['band'].isin(['Field', 'Border'])]['PixelCount'] == 0).all())
@@ -366,7 +368,7 @@ for state, state_folder, year in zip(states, state_folders, years):
         # make Sentinel-2 chips as .nc
         force_sub = force_arr[:,:,row['row_start']:row['row_end'], row['col_start']:row['col_end']].copy()
         # set values below 1 to -9999
-        force_sub[force_sub < 1] = -9999
+        force_sub[force_sub < 0] = -9999
 
         time = np.arange(6)
         x = geotf[0] + np.arange(chip_size) * geotf[1]
@@ -443,7 +445,7 @@ img_lab_paths = [(img, lab_dict[img.split('/')[-1].split('.')[0]])
 
 ## create db
 
-output_dir = f'/{origin}fields/output/rocks_db/Fine_tuner.db'
+output_dir = f'/{origin}fields/output/rocks_db/IACS_as_AI4_for_model_from_scratch_dilate_false.db'
 os.makedirs(output_dir, exist_ok=True)
 
 rasters2rocks = Rasters2RocksDB(

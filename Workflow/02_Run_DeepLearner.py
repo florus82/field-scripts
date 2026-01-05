@@ -1,5 +1,12 @@
 import sys
-sys.path.append('/home/potzschf/repos/')
+
+if 'workhorse' not in sys.executable.split('/'):
+    origin = 'workspace/'
+    sys.path.append('/media/')
+else:
+    origin = 'data/Aldhani/eoagritwin/'
+    sys.path.append('/home/potzschf/repos/')
+
 from helperToolz.helper import *
 from helperToolz.feevos.rocksdbutils_copy import *
 
@@ -9,7 +16,7 @@ import pandas as pd
 
 
 # set the rocksdb on which training will be performed
-db_name = 'AI4_RGB_NDVI_exclude_False'
+db_name = 'AI4_RGB_exclude_True'
 print(f'learn with {db_name}')
 # Set this to False for training
 #DEBUG=True
@@ -103,7 +110,7 @@ def train(args):
     NClasses = 1
     nf = 96
     verbose = True
-    model_config = {'in_channels': 5,
+    model_config = {'in_channels': 4,
                     'spatial_size_init': (128, 128),
                     'depths': [2, 2, 5, 2],
                     'nfilters_init': nf,
@@ -118,13 +125,13 @@ def train(args):
     optimizer = torch.optim.RAdam(model.parameters(), lr=1e-3, eps=1.e-6)
     scaler = GradScaler()
 
-    train_dataset = RocksDBDataset(f'/data/fields/output/rocks_db/{db_name}.db/train.db', transform=None)
+    train_dataset = RocksDBDataset(f'/{origin}fields/output/rocks_db/{db_name}.db/train.db', transform=None)
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size,
-                              shuffle=False, num_workers=4, pin_memory=True)
+                              shuffle=False, num_workers=3, pin_memory=True)
 
-    valid_dataset = RocksDBDataset(f'/data/fields/output/rocks_db/{db_name}.db/valid.db', transform=None)
+    valid_dataset = RocksDBDataset(f'/{origin}fields/output/rocks_db/{db_name}.db/valid.db', transform=None)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=batch_size,
-                              shuffle=False, num_workers=4, pin_memory=True)
+                              shuffle=False, num_workers=3, pin_memory=True)
 
     start = datetime.now()
     epoch_pbar = tqdm(range(num_epochs), desc="Epochs", position=0)
@@ -182,13 +189,13 @@ def train(args):
         print("Training completed in: " + str(datetime.now() - start))
 
     
-    torch.save(conti[0], f'/data/fields/output/models/model_state_{db_name}_{conti[1]}.pth') # 
+    torch.save(conti[0], f'/{origin}fields/output/models/model_state_{db_name}_{conti[1]}_CONTROL.pth') # 
 
     df  = pd.DataFrame(data = res)
-    df.to_csv(f'/data/fields/output/loss/loss_{db_name}_{conti[1]}.csv', sep=',',index=False)
+    df.to_csv(f'/{origin}fields/output/loss/loss_{db_name}_{conti[1]}_CONTROL.csv', sep=',',index=False)
 
     df  = pd.DataFrame(data = res2)
-    df.to_csv(f'/data/fields/output/loss/MCC_{db_name}_{conti[1]}.csv', sep=',',index=False)
+    df.to_csv(f'/{origin}fields/output/loss/MCC_{db_name}_{conti[1]}_CONTROL.csv', sep=',',index=False)
 
 
 def main():

@@ -15,10 +15,11 @@ else:
     prefix = '/data/Aldhani/eoagritwin/'
 
 # setfine-tune dataset
-db_name = 'Fine_tuner'
+db_name = 'AI4_RGB_exclude_True'#'Fine_tuner'
 
 # set model that is fine-tuned
 model_check = 'AI4_RGB_exclude_True_38'
+
 
 # freezing strategies
 
@@ -60,6 +61,7 @@ model_check = 'AI4_RGB_exclude_True_38'
 
 FREEZER = 2
 
+name_extra = f'FREEZER_{FREEZER}'
 
 # Set this to False for training
 #DEBUG=True
@@ -126,9 +128,6 @@ def monitor_epoch(model, epoch, datagen_valid, NClasses=1):
 
         metric_target(pred_segm, label_segm)
      
-        if DEBUG and idx > 5:
-            break
-    
     metric_kwargs_target = metric_target.compute()
     
 
@@ -202,19 +201,21 @@ def train(args):
     filter(lambda p: p.requires_grad, model.parameters()),
     lr=1e-4,
     eps=1.e-6
-)
+    )
+
     scaler = GradScaler()
 
     train_dataset = RocksDBDataset(f'{prefix}fields/output/rocks_db/{db_name}.db/train.db', transform=None)
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size,
-                              shuffle=False, num_workers=4, pin_memory=True)
+                              shuffle=False, num_workers=3, pin_memory=True)
 
     valid_dataset = RocksDBDataset(f'/{prefix}fields/output/rocks_db/{db_name}.db/valid.db', transform=None)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=batch_size,
-                              shuffle=False, num_workers=4, pin_memory=True)
+                              shuffle=False, num_workers=3, pin_memory=True)
 
     start = datetime.now()
     epoch_pbar = tqdm(range(num_epochs), desc="Epochs", position=0)
+    
     for epoch in epoch_pbar:
         tot_loss = 0
         model.train() # train function from ptavit3d_dn(torch.nn.Module) is called
@@ -269,20 +270,20 @@ def train(args):
         print("Training completed in: " + str(datetime.now() - start))
 
     
-    torch.save(conti[0], f'{prefix}fields/output/models/model_state_{db_name}_{conti[1]}_on_{model_check}.pth') # 
+    torch.save(conti[0], f'{prefix}fields/output/models/model_state_{db_name}_{conti[1]}_on_{model_check}_{name_extra}.pth') # 
 
     df  = pd.DataFrame(data = res)
-    df.to_csv(f'{prefix}fields/output/loss/loss_{db_name}_on_{model_check}.csv', sep=',',index=False)
+    df.to_csv(f'{prefix}fields/output/loss/loss_{db_name}_on_{model_check}_{name_extra}.csv', sep=',',index=False)
 
     df  = pd.DataFrame(data = res2)
-    df.to_csv(f'{prefix}fields/output/loss/MCC_{db_name}_on_{model_check}.csv', sep=',',index=False)
+    df.to_csv(f'{prefix}fields/output/loss/MCC_{db_name}_on_{model_check}_{name_extra}.csv', sep=',',index=False)
 
 
 def main():
     class Args:
         def __init__(self):
-            self.epochs = 50
-            self.batch_size = 3 # H100 test - 94GB GPU memory
+            self.epochs = 10
+            self.batch_size = 3
 
     args = Args()
         

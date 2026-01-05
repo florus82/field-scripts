@@ -31,7 +31,10 @@ ref_list_sorted.append([file for file in getFilelist(f'/data/Aldhani/eoagritwin/
 
 overlords_jobs = []
 
-for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
+for midx, (prediction, reference) in enumerate(zip(pred_list_sorted, ref_list_sorted)):
+    print(midx)
+    if midx != 8:
+        continue
     if 'unmasked' in prediction:
         result_dir = f'/data/Aldhani/eoagritwin/fields/Auxiliary/grid_search/Brandenburg/{model_name}/{year}/' + prediction.split('/')[-1].split('.')[0] + reference.split('/')[-1].split('.')[0]
     else:
@@ -154,13 +157,14 @@ for prediction, reference in zip(pred_list_sorted, ref_list_sorted):
             extent_pred = pred_ds.GetRasterBand(1).ReadAsArray(col_start[j], row_start[i], col_end[j] - col_start[j], row_end[i] - row_start[i]) # goes into InstSegm --> image of crop probability 
             # # mask extend_pred with reference
             if 'unmasked' in prediction:
-                pass
+                # check if prediction subset of fields actually contains data
+                if len(np.unique(extent_pred)) == 1:
+                    continue
             else:
                 extent_pred_masked = extent_pred * extent_true[row_start[i]:row_end[i], col_start[j]:col_end[j]]
-
-            # check if prediction subset of fields actually contains data
-            if len(np.unique(extent_pred_masked)) == 1:
-                continue
+                # check if prediction subset of fields actually contains data
+                if len(np.unique(extent_pred_masked)) == 1:
+                    continue
 
             # check if tile contains a sample of reference/label data
             extent_true_label = instances_true[row_start[i]:row_end[i], col_start[j]:col_end[j]]

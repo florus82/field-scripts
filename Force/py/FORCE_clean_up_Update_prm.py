@@ -6,12 +6,12 @@ import shutil
 
 ######################################################## year and paths
 year = 2019
-tile_path = f'/data/Aldhani/eoagritwin/force/output/Guzinski/{year}/tiles/'
+tile_path = f'/data/Aldhani/eoagritwin/force/output/Guzinski/{year}/'
 prm_file = f'/data/Aldhani/eoagritwin/force/parameterfile/Guzinski/{year}_10_day_comp_for_magic.prm'
 prm_file_clean = f'/data/Aldhani/eoagritwin/force/parameterfile/Guzinski/{year}_10_day_comp_for_magic_cleanUp.prm'
 magic_path = '/data/Aldhani/eoagritwin/force/parameterfile/Guzinski/magic_subs'
 
-number_of_expected_bands = 423
+number_of_expected_bands = 470
 
 # check which tiles were already processed
 folders = [os.path.join(tile_path, name) for name in os.listdir(tile_path) if os.path.isdir(os.path.join(tile_path, name))]
