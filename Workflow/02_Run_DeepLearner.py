@@ -201,7 +201,7 @@ def train(args):
 def main():
     class Args:
         def __init__(self):
-            self.epochs = 50
+            self.epochs = 15
             self.batch_size = 3 # H100 test - 94GB GPU memory
 
     args = Args()
