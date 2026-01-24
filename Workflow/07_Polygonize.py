@@ -95,10 +95,6 @@ for path, combi in zip(paths, combis):
     npTOdisk(vrt_arr * mask_arr, export_path, f'{path}prediction/{path.split('/')[-2]}.tif', bands=1, noData=0)
   
 
-
-
-
-
     # make a physical copy of these files
     outpath = path_safe(f'{path}quick_n_dirty/')
     if len(getFilelist(outpath, '.tif')) != 0:

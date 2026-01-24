@@ -18,55 +18,66 @@ else:
 print(f'working in {origin}')
 
 # make vrts from force outputs for easier processing
-year = 2023
-state = 'Germany'
-model_name = 'model_state_AI4_RGB_exclude_False_47'
+year = 2019
+state = 'GERMANY'
+model_name = 'model_state_AI4_RGB_exclude_True_38'
+
+vrt_out = path_safe(f'{prefix}fields/Auxiliary/vrt/{state}/{year}/')
+reduced_files = reduce_forceTSA_output_to_validmonths(f'{prefix}force/output/{state}/{year}/', 3, 8)
+ordered_files = force_order_Colors_for_VRT(reduced_files, ['BLU', 'GRN', 'RED', 'BNR'], [f'MONTH-{d:02d}' for d in range(3,9,1)])
+
+if os.path.isdir(vrt_out):
+    if len(getFilelist(f'{vrt_out}', '.vrt', deep=True)) > 0:
+        print('VRT seems to be already computated, probably to create masks based on IACS')
+    else:
+        force_to_vrt(reduced_files, ordered_files, vrt_out, False, bandnames=['BLU', 'GRN', 'RED', 'BNR'])
+else:
+    os.makedirs(vrt_out)
+    force_to_vrt(reduced_files, ordered_files, vrt_out, False, bandnames=['BLU', 'GRN', 'RED', 'BNR'])
+
+
+# set folder
 predict_master_folder = path_safe(f"{prefix}fields/output/predictions/FORCE/{state}/{model_name.split('_state_')[-1]}/{year}/")
 vrt_Folder = f"{prefix}/fields/Auxiliary/vrt/{state}/{year}/{dirfinder(f'{prefix}/fields/Auxiliary/vrt/{state}/{year}/')[0]}"
-cropMask_Folder = f'{prefix}fields/IACS/4_Crop_mask/{state}/{year}/'
+
 
 # # load vrts into npdstack
-print('Load vrt into numpy for prediction')
-dat = loadVRTintoNumpyAI4(vrt_Folder)
+# print('Load vrt into numpy for prediction')
+# dat = loadVRTintoNumpyAI4_PARALLEL(vrt_Folder, 1000, 100, tempP=path_safe(f"{predict_master_folder}temp/"))
 
 # print(f'loaded np array has the shape:{dat.shape}')
+
+vrtFiles = [file for file in getFilelist(vrt_Folder, '.vrt') if 'Cube' not in file]
+vrtFiles = sortListwithOtherlist([int(vrt.split('_')[-1].split('.')[0]) for vrt in vrtFiles], vrtFiles)[-1]
+
+vrt_ds = gdal.Open(vrtFiles[0])
 
 # set tiling scheme and chip size on which prediction will be undertaken
 chipsize = 128*2 # 5 is the maximum with GPU in basement
 overlap  = 20
 
-row_col_ind = get_row_col_indices(chipsize, overlap, dat.shape[2:][0], dat.shape[2:][1])
+row_col_ind = get_row_col_indices(chipsize, overlap, vrt_ds.RasterYSize, vrt_ds.RasterXSize)
 
 # ####################################################### Predict
 print('start prediction')
-predicted_chips_list = predict_on_GPU(f'{prefix}fields/output/models/{model_name}.pth', row_col_ind, dat, 
-                                      temp_path=f'{predict_master_folder}temp/')# model_state_All_but_LU_transformed_42
+predicted_chips_list = predict_on_GPU_without_preload(f'{prefix}fields/output/models/{model_name}.pth', row_col_ind, vrtFiles, 
+                                      temp_path=f'{predict_master_folder}temp/')
 
-####################################################### Postprocess
-print('start exporting')
 
     # export the predicted chips (masked and not masked)
 
 with open(f'{predict_master_folder}temp/preds.pkl', 'rb') as f:
     predicted_chips_list = pickle.load(f)
+
 export_GPU_predictions(predicted_chips_list, 
-                    [crop_mask_file for crop_mask_file in \
-                     getFilelist(cropMask_Folder, '.tif') if 'prediction_extent' not in crop_mask_file], #f'{prefix}fields/IACS/4_Crop_mask/{year}/GSA-DE_BRB-{year}_cropMask_lines_touch_false_lines_touch_false_linecrop.tif', 
+                    'no mask', 
                     vrt_Folder,
                     row_col_ind, 
                     path_safe(f'{predict_master_folder}chips_folder/'),
                     chipsize, overlap)
-
 
 # # make vrt of predicted image chips
 for chip in dirfinder(f'{predict_master_folder}chips_folder/'):
     predicted_chips_to_vrt(f'{predict_master_folder}chips_folder/', chip,  chipsize, overlap,
                         path_safe(f'{predict_master_folder}vrt/'), pyramids=True)
 
-
-# adapt for case that extent_prection is already in there
-
-# make a subset of the reference mask (extent FORCE output) to the extent of the prediction
-for crop_mask_file in getFilelist(cropMask_Folder, '.tif'): 
-    subset_mask_to_prediction_extent(crop_mask_file,
-    getFilelist(f'{predict_master_folder}vrt/', '.vrt')[0])
