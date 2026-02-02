@@ -10,15 +10,13 @@ from helperToolz.helpsters import *
 # load the prediction and labels
 year = 2019
 model_name = 'AI4_RGB_exclude_True_38'
-ncores = 25
+ncores = 14
 
-t_ext = 0.1
-t_bound = 0.8
+t_ext = 0.8
+t_bound = 0.2
 
-storPath = path_safe(f"/data/Aldhani/eoagritwin/fields/segmented/Germany/{model_name}/{year}/ext_\
-                     {''.join(str(t_ext).split('.'))}_bound_{''.join(str(t_bound).split('.'))}/")
+storPath = path_safe(f"/data/Aldhani/eoagritwin/fields/segmented/Germany/{model_name}/{year}/ext_{''.join(str(t_ext).split('.'))}_bound_{''.join(str(t_bound).split('.'))}/")
 folder_path = path_safe(f"{storPath}/intermediates/")
-results_folder_path = path_safe(f"{storPath}/results/")
 
 # load precition
 pred_ds = gdal.Open('/data/Aldhani/eoagritwin/fields/output/predictions/FORCE/GERMANY/AI4_RGB_exclude_True_38/2019/vrt/unmasked_chips_256_20.vrt')
@@ -40,22 +38,24 @@ boundary_pred_list = []
 result_dir_list = []
 row_col_start = []
 
+processed_chips = [file.split('segmented_')[-1].split('.')[0] for file in getFilelist(folder_path, '.tif')]
+
 # read in vrt in tiles
 for i in range(len(row_end)):
     for j in range(len(col_end)):
-        
-        ######### fill the lists with tiled data
+        if str(row_start[i]) + '_' + str(col_start[j]) not in processed_chips:
+            ######### fill the lists with tiled data
 
-        #subset the prediction of fields read-in
-        extent_pred = pred_ds.GetRasterBand(1).ReadAsArray(col_start[j], row_start[i], col_end[j] - col_start[j], row_end[i] - row_start[i]) # goes into InstSegm --> image of crop probability 
-        extent_pred_list.append(extent_pred)
-        
-        # load predicted boundary prob subset // goes into InstSegm --> image of boundary probability
-        boundary_pred_list.append(pred_ds.GetRasterBand(2).ReadAsArray(col_start[j], row_start[i], col_end[j] - col_start[j], row_end[i] - row_start[i])) 
-        
-        # output folder
-        result_dir_list.append(folder_path)
-        row_col_start.append(str(row_start[i]) + '_' + str(col_start[j]))
+            #subset the prediction of fields read-in
+            extent_pred = pred_ds.GetRasterBand(1).ReadAsArray(col_start[j], row_start[i], col_end[j] - col_start[j], row_end[i] - row_start[i]) # goes into InstSegm --> image of crop probability 
+            extent_pred_list.append(extent_pred)
+            
+            # load predicted boundary prob subset // goes into InstSegm --> image of boundary probability
+            boundary_pred_list.append(pred_ds.GetRasterBand(2).ReadAsArray(col_start[j], row_start[i], col_end[j] - col_start[j], row_end[i] - row_start[i])) 
+            
+            # output folder
+            result_dir_list.append(folder_path)
+            row_col_start.append(str(row_start[i]) + '_' + str(col_start[j]))
  
 
 jobs = [[t_ext, t_bound, extent_pred_list[i], boundary_pred_list[i], row_col_start[i], result_dir_list[i],\
