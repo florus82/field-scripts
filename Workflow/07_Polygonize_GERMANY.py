@@ -37,9 +37,10 @@ model = 'AI4_RGB_exclude_True_38'
 year = 2019
 ger = gpd.read_file(f'/data/{origin}misc/gadm41_DEU_shp/gadm41_DEU_0.shp')
 
+ext = '04'
+bound = '02'
 
-
-path = f"/data/Aldhani/eoagritwin/fields/segmented/{state}/{model}/{year}/ext_04_bound_02/"
+path = f"/data/Aldhani/eoagritwin/fields/segmented/{state}/{model}/{year}/ext_{ext}_bound_{bound}/"
 # get tile files for prediction
 files = getFilelist(f"{path}intermediates/", '.tif', deep=True)
 
@@ -283,9 +284,9 @@ mask_ds.GetRasterBand(1).WriteArray(mask_array)
 mask_band = mask_ds.GetRasterBand(1)
 
 del mask_array
-# create output for shp
-driver = ogr.GetDriverByName('ESRI Shapefile')  # or 'GeoJSON', 'GPKG', etc.
-out_ds = driver.CreateDataSource(f'{outpath}Fields_polygons_{state}.shp')  # Output vector file
+# create output 
+driver = ogr.GetDriverByName('GPKG')  # or 'GeoJSON', 'GPKG', etc.
+out_ds = driver.CreateDataSource(f'{outpath}Fields_polygons_{state}_ext_{ext}_bound_{bound}.gpkg')  # Output vector file
 out_layer = out_ds.CreateLayer('polygons', getSpatRefRas(ds), geom_type=ogr.wkbPolygon)
 field_defn = ogr.FieldDefn('FieldID', ogr.OFTInteger)
 out_layer.CreateField(field_defn)
