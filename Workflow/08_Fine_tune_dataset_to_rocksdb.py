@@ -1,5 +1,7 @@
 import sys
 
+import random
+
 if 'workhorse' not in sys.executable.split('/'):
     origin = 'workspace/'
     sys.path.append('/media/')
@@ -11,7 +13,6 @@ from helperToolz.polygons_to_labels import *
 from helperToolz.helpsters import *
 import xarray as xr
 import rioxarray
-from helperToolz.feevos.rocksdbutils_copy import *
 from math import ceil as mceil
 
 
@@ -19,8 +20,8 @@ from math import ceil as mceil
 
 
 IACS_path = f'/{origin}fields/IACS/1_Polygons/'
-temp_folder = f'/{origin}fields/IACS/temp_trash/'
-out_folder = f'/{origin}fields/Fine_tune/'
+temp_folder = f'/{origin}fields/IACS/temp_trash/test/'
+out_folder = path_safe(f'/{origin}fields/Fine_tune_test_dilate_True/')
 FORCE_folder = f'/{origin}force/output/'
 aux_vrt_path = f'/{origin}fields/Auxiliary/vrt/'
 
@@ -34,10 +35,12 @@ state_exclude_columns = ['EC_hcat_n', 'EC_hcat_n', 'NU_BEZ', 'EC_hcat_n', 'BEZ']
 state_burners = ['field_id', 'field_id', 'ID', 'field_id','LWREFSID']
 years = [2022, 2024, 2023, 2020, 2021]
 
+# set variables
 chip_size = 256
-Total_number_of_samples = 3500
+Total_number_of_samples = 5000
 gtiff_driver = gdal.GetDriverByName('GTiff')
 nc_band_names = ["B2", "B3", "B4", "B8"]
+random.seed(42)   
 
 
 # get IACS file
@@ -91,7 +94,7 @@ for state, state_folder, state_type, state_exclude_column, state_burner, year in
                     path_to_extent_raster=vrt_cube_path, 
                     path_to_rasterlines_out=borders_path,
                     all_touch=True,
-                    dilate=False)
+                    dilate=True)
     print('field borders rasterized')
     # 3. get field IDs 
     make_crop_mask(path_to_polygon=path,
@@ -163,7 +166,8 @@ result = {
     'row_end': [],
     'col_start': [],
     'col_end': [],
-    'PixelCount': []
+    'PixelCount': [],
+    'Kill': []
 }
 
 for state, year in zip(states, years):
@@ -179,12 +183,17 @@ for state, year in zip(states, years):
     row_end   = row_col_ind[1]
     col_start = row_col_ind[2]
     col_end   = row_col_ind[3]
+
+    # keep track of outer edges of rasterized fields (as they are prone to arbitrary field vs nask values!!!)
+    dummy_box = np.zeros((len(row_start), len(col_start)))
+    ind_box = dummy_box.copy()
+
     for i in range(len(row_end)):
         for j in range(len(col_end)):
             for band in range(bands):
 
                 if band == 2:
-                    continue
+                    continue # not sure what should be stratified here --> too arbitrary??
 
                 sub = arr_stack[row_start[i]:row_end[i], col_start[j]:col_end[j],band]
                 # take the sum and append
@@ -195,14 +204,62 @@ for state, year in zip(states, years):
                 result['row_end'].append(row_end[i])
                 result['col_start'].append(col_start[j])
                 result['col_end'].append(col_end[j])
+
+                if band ==1 and np.count_nonzero(sub) > 0:
+                    dummy_box[i, j] = 1
+
                 # make a mask for all values that are not 0
                 if band == 3:
                     result['PixelCount'].append(len(np.unique(sub))-1) # substract -10000
                 else:
                     result['PixelCount'].append(np.count_nonzero(sub))
 
+    # fin outer edge chips
+    for rowx in range(dummy_box.shape[0]):
+        for colx in range(dummy_box.shape[1]):
+            if dummy_box[rowx, colx] == 0:
+                ind_box[rowx, colx] = 1
+            elif dummy_box[rowx, colx] != 0:
+                ind_box[rowx, colx] = 1
+                break
+
+    for colx in range(dummy_box.shape[1]):
+        for rowx in range(dummy_box.shape[0]):
+            if dummy_box[rowx, colx] == 0:
+                ind_box[rowx, colx] = 1
+            elif dummy_box[rowx, colx] != 0:
+                ind_box[rowx, colx] = 1
+                break
+
+    for rowx in range(dummy_box.shape[0]):
+        for colx in range(dummy_box.shape[1]-1,-1,-1):
+            if dummy_box[rowx, colx] == 0:
+                ind_box[rowx, colx] = 1
+            elif dummy_box[rowx, colx] != 0:
+                ind_box[rowx, colx] = 1
+                break
+
+    for colx in range(dummy_box.shape[1]):
+        for rowx in range(dummy_box.shape[0]-1,-1,-1):
+            if dummy_box[rowx, colx] == 0:
+                ind_box[rowx, colx] = 1
+            elif dummy_box[rowx, colx] != 0:
+                ind_box[rowx, colx] = 1
+                break
+
+    for i in range(len(row_end)):
+        for j in range(len(col_end)):
+            for band in range(bands-1):
+                if ind_box[i, j] ==1:
+                    result['Kill'].append(1)
+                else:
+                    result['Kill'].append(0)
+
 # Convert results dict to DataFrame
 df = pd.DataFrame(result)
+# cut-off outer edge chips
+df = df[df["Kill"] == 0].copy()
+
 
 ### get a list of row col combis that only result in NA image pixel as they are out of bounds
 df_mask = []
@@ -222,10 +279,12 @@ for (state, year), group in df.groupby(['state', 'year']):
     df_mask.append(sub_df_0[~mask].copy())
 
 df_masked = pd.concat(df_mask)
-
 df_nonZero = df_masked[df_masked['PixelCount'] > 10]
+
 state_sizes = df_nonZero['state'].value_counts()
 samples_per_state = np.ceil(state_sizes / state_sizes.sum() * Total_number_of_samples).astype(int)
+
+
 
 # Create percentiles at 10% intervals
 percentiles = np.arange(0, 101, 10)  # 0, 10, 20, ..., 100
@@ -235,15 +294,16 @@ samples = []
 colkeys = ['row_start', 'row_end', 'col_start', 'col_end']
 
 for stati in df_nonZero['state'].unique():
-
+    print(stati)
     samples_per_bin = np.ceil(samples_per_state[stati]/10).astype(int)
-    
+    print(samples_per_bin)
     for band in df_nonZero['band'].unique():
-     
+        print(band)
         group = df_nonZero[df_nonZero['band'] == band]
+        print(Group)
         # Compute percentile thresholds for this band's PixelCount
         thresholds = np.percentile(group['PixelCount'], percentiles)
-        
+        print(thresholds)
         # Iterate over percentile *ranges* (0–25%, 25–50%, etc.)
         for k in range(len(thresholds) - 1):
             lower, upper = thresholds[k], thresholds[k + 1]
@@ -257,8 +317,7 @@ for stati in df_nonZero['state'].unique():
             sampled_rows = subset.sample(n_take, random_state=42)
             
             samples.append(sampled_rows) 
-            # Define the keys that define a unique spatial block
-            
+         
 
             # Drop from df_nonZero all rows whose block exists in sampled_rows
             df_nonZero = (
@@ -304,7 +363,8 @@ samples0_per_state = np.ceil(state_sizes0 / state_sizes0.sum() * samp0).astype(i
 samples0 = []
 for statX in df_all0_unique['state'].unique():
     group = df_all0_unique[df_all0_unique['state'] == statX]
-    sampled_rows0 = group.sample(samples0_per_state[statX], random_state=42)
+    nn_take = min(samples0_per_state[statX], len(group))
+    sampled_rows0 = group.sample(nn_take, random_state=42)
     samples0.append(sampled_rows0)
 
 # merge samples of empty chips with those that contain data
@@ -398,72 +458,72 @@ for state, state_folder, year in zip(states, state_folders, years):
 
 ################################################ create rocksdb from images (nc) and labels (tif)
 
-img_size = 128
-## create metadata file
-metadata = {
-    'inputs': {
-        'inputs_shape': (4, 6, img_size, img_size),  # bands, time, rows, cols
-        'inputs_dtype': np.float32     
-    },
-    'labels': {
-        'labels_shape': (4, img_size, img_size),          
-        'labels_dtype': np.float32
-    }
-}
+# img_size = 128
+# ## create metadata file
+# metadata = {
+#     'inputs': {
+#         'inputs_shape': (4, 6, img_size, img_size),  # bands, time, rows, cols
+#         'inputs_dtype': np.float32     
+#     },
+#     'labels': {
+#         'labels_shape': (4, img_size, img_size),          
+#         'labels_dtype': np.float32
+#     }
+# }
 
 
-## define function to load imgs and labs
-def names2array_function(names):
+# ## define function to load imgs and labs
+# def names2array_function(names):
 
-    variables2use=['B2','B3','B4','B8']#,'NDVI']
+#     variables2use=['B2','B3','B4','B8']#,'NDVI']
 
-    image_path, label_path = names
-    # load image
-    img = xr.open_dataset(image_path)
-    image = np.concatenate([img[var].values[None] for var in variables2use],0)
+#     image_path, label_path = names
+#     # load image
+#     img = xr.open_dataset(image_path)
+#     image = np.concatenate([img[var].values[None] for var in variables2use],0)
     
-    # load label
-    ds = xr.open_dataset(label_path)
-    label = np.asarray(ds['band_data'].values)
-    label[np.isnan(label)] = 0
-    return [image, label] 
+#     # load label
+#     ds = xr.open_dataset(label_path)
+#     label = np.asarray(ds['band_data'].values)
+#     label[np.isnan(label)] = 0
+#     return [image, label] 
 
-## create list of images and labels
+# ## create list of images and labels
 
-# database for AI4Boundaries
-imgs = getFilelist(f'{out_folder}img/', '.nc', deep=True)
-labs = getFilelist(f'{out_folder}label/', '.tif', deep=True)
-imgs.sort()
-labs.sort()
+# # database for AI4Boundaries
+# imgs = getFilelist(f'{out_folder}img/', '.nc', deep=True)
+# labs = getFilelist(f'{out_folder}label/', '.tif', deep=True)
+# imgs.sort()
+# labs.sort()
 
-lab_dict = {lab.split('/')[-1].split('.')[0]: lab for lab in labs}
+# lab_dict = {lab.split('/')[-1].split('.')[0]: lab for lab in labs}
 
-img_lab_paths = [(img, lab_dict[img.split('/')[-1].split('.')[0]]) 
-                 for img in imgs 
-                 if img.split('/')[-1].split('.')[0] in lab_dict
-]
+# img_lab_paths = [(img, lab_dict[img.split('/')[-1].split('.')[0]]) 
+#                  for img in imgs 
+#                  if img.split('/')[-1].split('.')[0] in lab_dict
+# ]
 
-## create db
+# ## create db
 
-output_dir = f'/{origin}fields/output/rocks_db/IACS_as_AI4_for_model_from_scratch_dilate_false.db'
-os.makedirs(output_dir, exist_ok=True)
+# output_dir = f'/{origin}fields/output/rocks_db/IACS_as_AI4_for_model_from_scratch_dilate_false.db'
+# os.makedirs(output_dir, exist_ok=True)
 
-rasters2rocks = Rasters2RocksDB(
-    lstOfTuplesNames=img_lab_paths,            
-    names2raster_function=names2array_function,  
-    metadata=metadata,                       
-    flname_prefix_save=output_dir,           
-    batch_size=2,
-    transformT=TrainingTransform_for_rocks_Train(),
-    transformV=TrainingTransform_for_rocks_Valid(),
-    stride_divisor=2,                    
-    train_split=0.9,                         
-    Filter=img_size,
-    split_type='sequential'                  
-)
+# rasters2rocks = Rasters2RocksDB(
+#     lstOfTuplesNames=img_lab_paths,            
+#     names2raster_function=names2array_function,  
+#     metadata=metadata,                       
+#     flname_prefix_save=output_dir,           
+#     batch_size=2,
+#     transformT=TrainingTransform_for_rocks_Train(),
+#     transformV=TrainingTransform_for_rocks_Valid(),
+#     stride_divisor=2,                    
+#     train_split=0.9,                         
+#     Filter=img_size,
+#     split_type='sequential'                  
+# )
 
-rasters2rocks.create_dataset()
+# rasters2rocks.create_dataset()
 
 
-clear_directory(temp_folder)
+# clear_directory(temp_folder)
  

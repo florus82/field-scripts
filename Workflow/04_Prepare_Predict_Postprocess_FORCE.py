@@ -19,7 +19,7 @@ print(f'working in {origin}')
 
 # make vrts from force outputs for easier processing
 year = 2023
-state = 'Germany'
+state = 'Brandenburg'
 model_name = 'model_state_AI4_RGB_exclude_False_47'
 predict_master_folder = path_safe(f"{prefix}fields/output/predictions/FORCE/{state}/{model_name.split('_state_')[-1]}/{year}/")
 vrt_Folder = f"{prefix}/fields/Auxiliary/vrt/{state}/{year}/{dirfinder(f'{prefix}/fields/Auxiliary/vrt/{state}/{year}/')[0]}"

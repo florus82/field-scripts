@@ -160,7 +160,7 @@ def train(args):
             tot_loss += loss.item()
             train_pbar.set_postfix({"Loss": f"{loss.item():.4f}"})
 
-               # for export
+            # for export
             res['Epoch'].append(epoch)
             res['Iteration'].append(i)
             res['Loss'].append(loss.item())
