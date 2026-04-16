@@ -1,6 +1,6 @@
 import sys
 sys.path.append('/home/potzschf/repos/')
-from helperToolz.polygons_to_labels import *
+from helperToolz.Polygons_to_Labels import *
 from helperToolz.helpsters import *
 
 workhorse = True

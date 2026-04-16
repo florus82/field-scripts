@@ -300,7 +300,7 @@ for stati in df_nonZero['state'].unique():
     for band in df_nonZero['band'].unique():
         print(band)
         group = df_nonZero[df_nonZero['band'] == band]
-        print(Group)
+        print(group)
         # Compute percentile thresholds for this band's PixelCount
         thresholds = np.percentile(group['PixelCount'], percentiles)
         print(thresholds)

@@ -5,7 +5,7 @@ import shutil
 
 
 ######################################################## year and paths
-year = 2022
+year = 2021
 tile_path = f'/data/Aldhani/eoagritwin/force/output/Guzinski/{year}/'
 prm_file = f'/data/Aldhani/eoagritwin/force/parameterfile/Guzinski/{year}_10_day_comp_for_magic.prm'
 prm_file_clean = f'/data/Aldhani/eoagritwin/force/parameterfile/Guzinski/{year}_10_day_comp_for_magic_cleanUp.prm'
