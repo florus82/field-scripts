@@ -5,12 +5,19 @@ import shutil
 
 
 ######################################################## year and paths
-year = 2019
+year = 2023
 state = 'GERMANY'
 tile_path = path_safe(f'/data/Aldhani/eoagritwin/force/output/{state}/{year}/')
 prm_file = f'/data/Aldhani/eoagritwin/force/parameterfile/{state}/{year}_FBM_magic.prm'
 prm_file_clean = f'/data/Aldhani/eoagritwin/force/parameterfile/{state}/{year}_FBM_magic_cleanUp.prm'
 magic_path = f'/data/Aldhani/eoagritwin/force/parameterfile/{state}/magic_subs'
+
+# year = 2023
+# state = 'TEST'
+# tile_path = path_safe(f'/data/Aldhani/eoagritwin/force/output/{state}/{year}/')
+# prm_file = f'/data/Aldhani/eoagritwin/force/parameterfile/{state}/{year}_FBM_magic.prm'
+# prm_file_clean = f'/data/Aldhani/eoagritwin/force/parameterfile/{state}/{year}_FBM_magic_cleanUp.prm'
+# magic_path = f'/data/Aldhani/eoagritwin/force/parameterfile/{state}/magic_subs'
 
 number_of_expected_bands = 48
 
