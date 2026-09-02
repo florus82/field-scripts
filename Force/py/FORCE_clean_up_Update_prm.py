@@ -5,11 +5,11 @@ import shutil
 
 
 ######################################################## year and paths
-year = 2020
-tile_path = f'/data/Aldhani/eoagritwin/force/output/Guzinski/{year}/'
-prm_file = f'/data/Aldhani/eoagritwin/force/parameterfile/Guzinski/{year}_10_day_comp_for_magic.prm'
-prm_file_clean = f'/data/Aldhani/eoagritwin/force/parameterfile/Guzinski/{year}_10_day_comp_for_magic_cleanUp.prm'
-magic_path = '/data/Aldhani/eoagritwin/force/parameterfile/Guzinski/magic_subs'
+year = 2026
+tile_path = f'/data/Aldhani/eoagritwin/force/output/ET_Production/{year}/'
+prm_file = f'/data/Aldhani/eoagritwin/force/parameterfile/ET_Production/{year}_10_day_comp_for_magic.prm'
+prm_file_clean = f'/data/Aldhani/eoagritwin/force/parameterfile/ET_Production/{year}_10_day_comp_for_magic_cleanUp.prm'
+magic_path = '/data/Aldhani/eoagritwin/force/parameterfile/ET_Production/magic_subs'
 
 number_of_expected_bands = 470
 
